@@ -1,0 +1,32 @@
+name: gorodki
+description: "Gorodki — the Russian folk skittles game, set in a courtyard full of absurd surprises."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  audioplayers: ^6.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# Run `dart run flutter_launcher_icons` after `flutter pub get`
+# to (re)generate all launcher icons from the suprematist artwork.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#F2EEE3"
+  adaptive_icon_foreground: "assets/icon/icon_fg.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/audio/
