@@ -36,6 +36,10 @@ Official rules implemented:
   finest polka-dot underpants.
 * **Pigeons** — occasionally requisition your bat for the flock. No receipt.
 * **The puddle** — splash. A cat judges you.
+* **Return to sender** — throw the bat too vertically and it lands right
+  on your cap: you clutch your head, squat, and crawl off the field.
+* **The quadcopter** — occasionally descends on patrol and confiscates
+  your bat mid-air. Estimated delivery: 3–5 business days.
 
 ## Sound 🎵
 

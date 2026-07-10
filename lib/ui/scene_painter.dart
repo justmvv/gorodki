@@ -40,6 +40,7 @@ class ScenePainter extends CustomPainter {
     _player(canvas);
     _bat(canvas);
     _pigeon(canvas);
+    _drone(canvas);
     _splash(canvas);
     _aim(canvas);
     _tutorial(canvas);
@@ -725,6 +726,61 @@ class ScenePainter extends CustomPainter {
     final skin = Paint()..color = const Color(0xFFE0B48C);
     final shirt = Paint()..color = const Color(0xFF3B6EA5);
     final pants = Paint()..color = const Color(0xFF444B54);
+
+    // Special poses after the bat's unscheduled return.
+    if (g.playerBonked) {
+      final leg = Paint()
+        ..color = pants.color
+        ..strokeWidth = 7;
+      final arm = Paint()
+        ..color = shirt.color
+        ..strokeWidth = 6;
+      if (!g.bonkCrawling) {
+        // Squatting, arms clutched over the head.
+        c.drawLine(Offset(o.dx - 2, o.dy - 16), Offset(o.dx - 10, o.dy), leg);
+        c.drawLine(Offset(o.dx + 2, o.dy - 16), Offset(o.dx + 10, o.dy), leg);
+        c.drawRRect(
+            RRect.fromRectAndRadius(Rect.fromLTWH(o.dx - 10, o.dy - 34, 20, 20),
+                const Radius.circular(6)),
+            shirt);
+        final head = Offset(o.dx, o.dy - 40);
+        c.drawCircle(head, 9, skin);
+        // Arms wrapped over the head.
+        c.drawLine(Offset(o.dx - 9, o.dy - 28), head.translate(-3, -9), arm);
+        c.drawLine(Offset(o.dx + 9, o.dy - 28), head.translate(4, -9), arm);
+        // Cartoon stars orbiting the bump.
+        final tp = TextPainter(
+          text: TextSpan(
+            text: '✶  ✶',
+            style: TextStyle(
+              color: const Color(0xFFFFE082),
+              fontSize: 14 + math.sin(g.time * 8) * 2,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        tp.paint(c, head.translate(-14, -34));
+      } else {
+        // Crawling off the field, flat and humbled.
+        final paddle = math.sin(g.time * 10) * 4;
+        c.drawRRect(
+            RRect.fromRectAndRadius(Rect.fromLTWH(o.dx - 14, o.dy - 13, 30, 9),
+                const Radius.circular(4)),
+            shirt);
+        final head = Offset(o.dx - 19, o.dy - 11);
+        c.drawCircle(head, 7, skin);
+        c.drawArc(Rect.fromCircle(center: head, radius: 8), math.pi * 1.1,
+            math.pi * 0.8, true, Paint()..color = const Color(0xFF7A6A4F));
+        // Paddling limbs.
+        c.drawLine(Offset(o.dx - 8, o.dy - 6), Offset(o.dx - 12 + paddle, o.dy),
+            arm);
+        c.drawLine(
+            Offset(o.dx + 8, o.dy - 6), Offset(o.dx + 12 - paddle, o.dy), leg);
+      }
+      return;
+    }
+
     final run = g.playerFleeing ? math.sin(g.time * 16) * 6 : 0.0;
 
     // Legs.
@@ -857,6 +913,55 @@ class ScenePainter extends CustomPainter {
       ..close();
     c.drawPath(wing, Paint()..color = const Color(0xFF6F7B89));
     c.restore();
+  }
+
+  void _drone(Canvas c) {
+    if (!g.drone.active) return;
+    final o = _w(g.drone.x, g.drone.y);
+    final k = _scale;
+    final bob = math.sin(g.time * 5) * 2; // hover wobble
+    final ctr = o.translate(0, bob);
+
+    // Body.
+    c.drawRRect(
+        RRect.fromRectAndRadius(
+            Rect.fromCenter(center: ctr, width: 0.34 * k, height: 0.13 * k),
+            const Radius.circular(5)),
+        Paint()..color = const Color(0xFF4A4F57));
+    // Camera eye, watching you specifically.
+    c.drawCircle(ctr.translate(0, 0.05 * k), 3.5,
+        Paint()..color = const Color(0xFF88C9E8));
+
+    // Arms + spinning rotor blur.
+    final arm = Paint()
+      ..color = const Color(0xFF33373D)
+      ..strokeWidth = 3;
+    for (final dx in [-0.24, 0.24]) {
+      final hub = ctr.translate(dx * k, -0.08 * k);
+      c.drawLine(ctr, hub, arm);
+      final blurW =
+          0.28 * k * (0.55 + 0.45 * math.sin(g.time * 40 + dx * 10).abs());
+      c.drawOval(
+          Rect.fromCenter(
+              center: hub.translate(0, -3), width: blurW, height: 4),
+          Paint()..color = Colors.black.withValues(alpha: 0.35));
+    }
+
+    // Blinking status LED (definitely recording).
+    if ((g.time * 3) % 1 < 0.5) {
+      c.drawCircle(ctr.translate(-0.15 * k, -2), 2.2,
+          Paint()..color = const Color(0xFFE05B4B));
+    }
+
+    // Winch cable down to the confiscated bat.
+    if (g.drone.carrying) {
+      c.drawLine(
+          ctr.translate(0, 0.07 * k),
+          _w(g.bat.x, g.bat.y),
+          Paint()
+            ..color = const Color(0xFF33373D)
+            ..strokeWidth = 2);
+    }
   }
 
   void _splash(Canvas c) {

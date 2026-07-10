@@ -15,6 +15,8 @@ enum Phase {
   pigeonCarry, // a pigeon has unionized your bat
   pigeonStrike, // the pigeon punishes idleness; player goes to wash up
   broomChase, // Uncle Gena has had enough of bottle abuse
+  batBonk, // the bat came back; player clutches head and crawls away
+  droneCarry, // a quadcopter has confiscated the bat
   cooldown, // short pause before the next throw / figure
   gameOver,
 }
@@ -49,6 +51,13 @@ class Pigeon {
   double x = 0, y = 0, vx = 0, vy = 0;
 }
 
+class Drone {
+  bool active = false;
+  bool carrying = false;
+  double x = 0, y = 0;
+  double t = 0; // patrol lifetime
+}
+
 /// One-line messages shown as a banner.
 class GameMessage {
   final String text;
@@ -73,7 +82,12 @@ class GameController extends ChangeNotifier {
   final List<Pin> pins = [];
   final Bat bat = Bat();
   final Pigeon pigeon = Pigeon();
+  final Drone drone = Drone();
   final List<GameMessage> messages = [];
+
+  // Bat-on-the-head aftermath.
+  bool playerBonked = false;
+  bool bonkCrawling = false;
 
   // Aiming (slingshot drag).
   bool aimingDrag = false;
@@ -169,6 +183,9 @@ class GameController extends ChangeNotifier {
     playerFleeing = false;
     playerRunOffset = 0;
     pigeon.active = false;
+    drone.active = false;
+    playerBonked = false;
+    bonkCrawling = false;
     idleT = 0;
     _setupFigure();
     _startPreview();
@@ -221,8 +238,9 @@ class GameController extends ChangeNotifier {
       ..angle = 0
       ..spin = -(speed * 1.1);
 
-    // Occasionally a pigeon takes an interest in aviation regulations.
-    if (_rng.nextDouble() < 0.09) {
+    // Occasionally the local air force takes an interest.
+    final roll = _rng.nextDouble();
+    if (roll < 0.09) {
       pigeon
         ..active = true
         ..carrying = false
@@ -230,6 +248,15 @@ class GameController extends ChangeNotifier {
         ..y = 3.6 + _rng.nextDouble() * 1.6
         ..vx = -3.2 - _rng.nextDouble() * 1.5
         ..vy = 0;
+    } else if (roll < 0.15 && !drone.active) {
+      // A quadcopter descends on patrol.
+      drone
+        ..active = true
+        ..carrying = false
+        ..x = 10 + _rng.nextDouble() * 4
+        ..y = 9.5
+        ..t = 0;
+      _sfx('drone');
     }
 
     phase = Phase.flying;
@@ -265,6 +292,7 @@ class GameController extends ChangeNotifier {
     }
     _tickBottle(dt);
     _tickPigeon(dt);
+    _tickDrone(dt);
     _tickPins(dt);
 
     switch (phase) {
@@ -280,6 +308,10 @@ class GameController extends ChangeNotifier {
         _tickPigeonStrike(dt);
       case Phase.broomChase:
         _tickBroomChase(dt);
+      case Phase.batBonk:
+        _tickBatBonk(dt);
+      case Phase.droneCarry:
+        if (!drone.active) _endThrow();
       case Phase.cooldown:
         _cooldownT -= dt;
         if (_cooldownT <= 0) _startNextThrow();
@@ -327,6 +359,33 @@ class GameController extends ChangeNotifier {
             'It offered no receipt.');
         return;
       }
+    }
+
+    // --- Quadcopter interception ---------------------------------------
+    if (drone.active && !drone.carrying) {
+      final ddx = bat.x - drone.x, ddy = bat.y - drone.y;
+      if (ddx * ddx + ddy * ddy < 0.35) {
+        drone.carrying = true;
+        phase = Phase.droneCarry;
+        _sfx('drone');
+        _say('🚁', 'A quadcopter has intercepted your bat! '
+            'Estimated delivery: 3–5 business days.');
+        return;
+      }
+    }
+
+    // --- The bat returns to sender ---------------------------------------
+    if (bat.vy < -1 &&
+        bat.y < 1.9 &&
+        (bat.x - (playerX + 0.35)).abs() < 0.45) {
+      bat
+        ..y = World.batRadius + 0.02
+        ..vx = 0
+        ..vy = 0
+        ..spin = 0; // drops at his feet, mission accomplished
+      _throwHadContact = true;
+      _startBatBonk();
+      return;
     }
 
     // --- Laundry line -------------------------------------------------
@@ -503,9 +562,63 @@ class GameController extends ChangeNotifier {
     }
   }
 
+  void _tickDrone(double dt) {
+    if (!drone.active) return;
+    if (drone.carrying) {
+      // Ascends with the confiscated bat.
+      drone.y += 2.6 * dt;
+      drone.x += 0.6 * dt;
+      bat.x = drone.x;
+      bat.y = drone.y - 0.5;
+      bat.angle = math.sin(time * 4) * 0.25;
+      if (drone.y > 9.5) {
+        drone.active = false;
+        bat.active = false;
+      }
+      return;
+    }
+    drone.t += dt;
+    if (drone.t > 7) {
+      // Nothing to confiscate. Leaves, disappointed.
+      drone.y += 4 * dt;
+      if (drone.y > 9.5) drone.active = false;
+      return;
+    }
+    // Descends to patrol altitude, lazily tracking the bat.
+    drone.y += (3.6 - drone.y) * dt * 1.2;
+    if (bat.active && phase == Phase.flying) {
+      drone.x += (bat.x - drone.x).clamp(-3.0, 3.0) * dt * 1.4;
+    }
+  }
+
   // ------------------------------------------------------------------
   // Absurd events
   // ------------------------------------------------------------------
+
+  void _startBatBonk() {
+    phase = Phase.batBonk;
+    _eventT = 0;
+    playerBonked = true;
+    bonkCrawling = false;
+    _sfx('bonk');
+    _say('🤕', 'Right on the cap! You clutch your head, squat... '
+        'and crawl off the field with what dignity remains.', ttl: 4.5);
+  }
+
+  void _tickBatBonk(double dt) {
+    _eventT += dt;
+    if (_eventT < 1.0) {
+      // Clutching head, squatting, reconsidering life choices.
+    } else if (_eventT < 3.4) {
+      bonkCrawling = true;
+      playerRunOffset -= dt * 2.2; // slow, humbled crawl
+    } else {
+      playerBonked = false;
+      bonkCrawling = false;
+      playerRunOffset = 0;
+      _endThrow();
+    }
+  }
 
   void _startPigeonStrike() {
     phase = Phase.pigeonStrike;
