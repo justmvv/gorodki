@@ -12,6 +12,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # The Flutter project may live in the repo root or in a subfolder
+      # (e.g. cat_care_game/) — find it by its pubspec.yaml.
+      - name: Locate Flutter project
+        id: proj
+        run: |
+          PUBSPEC=$(git ls-files '*pubspec.yaml' | grep -v '/\.' | head -1)
+          if [ -z "$PUBSPEC" ]; then
+            echo "pubspec.yaml not found in the repository" >&2
+            exit 1
+          fi
+          DIR=$(dirname "$PUBSPEC")
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "Project directory: $DIR"
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -21,15 +35,18 @@ jobs:
       # The build number in the main menu becomes date + CI run number,
       # so every deploy is immediately identifiable in the app itself.
       - name: Stamp build number
+        working-directory: ${{ steps.proj.outputs.dir }}
         run: |
           BUILD="$(date -u +%Y.%m.%d)+ci.${{ github.run_number }}"
           sed -i "s/const String appBuild = '.*';/const String appBuild = '$BUILD';/" lib/core/version.dart
           echo "Stamped build: $BUILD"
 
       - name: Install dependencies
+        working-directory: ${{ steps.proj.outputs.dir }}
         run: flutter pub get
 
       - name: Build web release
+        working-directory: ${{ steps.proj.outputs.dir }}
         run: flutter build web --release
 
       - name: Deploy to Cloudflare Workers (static assets)
@@ -37,4 +54,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ${{ steps.proj.outputs.dir }}
           command: deploy
