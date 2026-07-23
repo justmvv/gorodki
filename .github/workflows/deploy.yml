@@ -54,4 +54,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ${{ steps.proj.outputs.dir }}
+          # the action defaults to an old Wrangler 3.x which does not
+          # understand assets-only Workers ([assets] config) — pin v4
+          wranglerVersion: "4"
           command: deploy
