@@ -38,7 +38,6 @@ jobs:
         working-directory: ${{ steps.proj.outputs.dir }}
         run: |
           BUILD="$(date -u +%Y.%m.%d)+ci.${{ github.run_number }}"
-          sed -i "s/const String appBuild = '.*';/const String appBuild = '$BUILD';/" lib/core/version.dart
           echo "Stamped build: $BUILD"
 
       - name: Install dependencies
