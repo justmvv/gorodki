@@ -36,6 +36,7 @@ class ScenePainter extends CustomPainter {
     if (g.evening) {
       _lamp(canvas, World.lampX, g.lampBroken);
       _lamp(canvas, World.lampX2, g.lampBroken2, scale: 0.85);
+      _fireflies(canvas, size);
       _spiderWeb(canvas);
       _car(canvas);
       _manholeProp(canvas);
@@ -1314,63 +1315,132 @@ class ScenePainter extends CustomPainter {
   /// POLES themselves (top-near-pole, top-far-pole, bottom-near-pole,
   /// bottom-far-pole) — spiders weave across a gap between solid
   /// structures, not as a single line floating between two treetops.
+  // A pair of fireflies drifting lazily over the yard, purely for
+  // atmosphere — no gameplay effect. They fade in and out on a slow duty
+  // cycle so they don't feel like they're always there.
+  void _fireflies(Canvas c, Size s) {
+    for (int f = 0; f < 2; f++) {
+      final phase = f * 3.7;
+      final cycle = ((g.time * 0.12) + f * 0.5) % 1.0;
+      // Visible for roughly the middle 55% of each cycle, fading at the
+      // edges.
+      double vis;
+      if (cycle < 0.2 || cycle > 0.75) {
+        vis = 0;
+      } else if (cycle < 0.3) {
+        vis = (cycle - 0.2) / 0.1;
+      } else if (cycle > 0.65) {
+        vis = (0.75 - cycle) / 0.1;
+      } else {
+        vis = 1;
+      }
+      if (vis <= 0) continue;
+      final t = g.time * 0.55 + phase;
+      final wx = 11.5 + f * 3.2 + math.sin(t) * 2.3 + math.sin(t * 0.37) * 1.1;
+      final wy = 1.1 + f * 0.3 + math.sin(t * 0.8) * 0.5 + math.cos(t * 0.29) * 0.3;
+      final o = _w(wx, wy);
+      final glow = 0.55 + 0.45 * math.sin(g.time * 9 + phase * 4);
+      final alpha = (vis * (0.4 + glow * 0.5)).clamp(0.0, 1.0);
+      c.drawCircle(o, 6.5, Paint()..color = Color.fromRGBO(214, 255, 140, alpha * 0.28));
+      c.drawCircle(o, 2.2, Paint()..color = Color.fromRGBO(224, 255, 170, alpha));
+    }
+  }
+
+  // A cheap deterministic hash (0..1 fract of a big sine), seeded by the
+  // web's fixed webSeed so the asymmetry is stable across frames instead
+  // of crawling every repaint.
+  double _webHash(int i) {
+    final x = math.sin(i * 12.9898 + g.webSeed * 78.233) * 43758.5453;
+    return x - x.floorToDouble();
+  }
+
   void _spiderWeb(Canvas c) {
     if (g.webAlpha <= 0) return;
     final tl = _w(World.lampX, World.webTopY);
     final tr = _w(World.lampX2, World.webTopY);
     final bl = _w(World.lampX, World.webBottomY);
     final br = _w(World.lampX2, World.webBottomY);
-    final hub = Offset(
-        (tl.dx + tr.dx + bl.dx + br.dx) / 4, (tl.dy + tr.dy + bl.dy + br.dy) / 4);
+
+    double j(int i) => _webHash(i) - 0.5; // -0.5..0.5
+
+    // Center of the pole gap, then nudged off-true — a real web is never
+    // dead-centered in its frame.
+    final cx = (tl.dx + tr.dx + bl.dx + br.dx) / 4;
+    final cy = (tl.dy + tr.dy + bl.dy + br.dy) / 4;
+    final halfW = ((tr.dx - tl.dx).abs() + (br.dx - bl.dx).abs()) / 4;
+    final halfH = ((bl.dy - tl.dy).abs() + (br.dy - tr.dy).abs()) / 4;
+    final hub = Offset(cx + j(1) * halfW * 0.4, cy + j(2) * halfH * 0.4);
 
     final silk = Paint()
       ..color = Colors.white.withValues(alpha: 0.55 * g.webAlpha)
       ..strokeWidth = 1.1
       ..style = PaintingStyle.stroke;
+    final silkFaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.35 * g.webAlpha)
+      ..strokeWidth = 0.8
+      ..style = PaintingStyle.stroke;
 
-    // The frame: the quadrilateral spanning both poles.
-    c.drawLine(tl, tr, silk);
-    c.drawLine(bl, br, silk);
-    c.drawLine(tl, bl, silk);
-    c.drawLine(tr, br, silk);
-    c.drawLine(tl, br, silk); // corner braces, for that overachiever look
-    c.drawLine(tr, bl, silk);
+    // Bridge threads: the only dead-straight lines, anchoring the web to
+    // the two poles — this is really all a spider's frame is.
+    c.drawLine(hub, tl, silk);
+    c.drawLine(hub, tr, silk);
+    c.drawLine(hub, bl, silk);
+    c.drawLine(hub, br, silk);
 
-    // Radial spokes from the hub out to evenly spaced frame points.
-    final framePts = <Offset>[
-      tl, Offset.lerp(tl, tr, 0.5)!, tr,
-      Offset.lerp(tr, br, 0.5)!, br,
-      Offset.lerp(br, bl, 0.5)!, bl,
-      Offset.lerp(bl, tl, 0.5)!,
-    ];
-    for (final pt in framePts) {
-      c.drawLine(hub, pt, silk);
+    // A handful of extra radial spokes, unevenly spaced and unevenly
+    // long, reaching toward the boundary of the pole gap.
+    const spokeCount = 11;
+    final angles = List<double>.generate(spokeCount, (i) {
+      final base = (i / spokeCount) * math.pi * 2;
+      return base + j(i * 3 + 5) * (math.pi / spokeCount) * 0.9;
+    });
+    final lens = List<double>.generate(spokeCount, (i) {
+      final cosA = math.cos(angles[i]), sinA = math.sin(angles[i]);
+      final denom = math.sqrt(
+          (cosA * cosA) / (halfW * halfW) + (sinA * sinA) / (halfH * halfH));
+      final r = denom > 0.0001 ? 1 / denom : halfW;
+      return r * (0.8 + j(i * 5 + 1) * 0.25);
+    });
+    for (int i = 0; i < spokeCount; i++) {
+      final tip = hub + Offset(math.cos(angles[i]), math.sin(angles[i])) * lens[i];
+      c.drawLine(hub, tip, silkFaint);
     }
-    // Concentric capture spiral (drawn as facets between the spokes).
-    for (int ring = 1; ring <= 3; ring++) {
-      final t = ring / 3.0;
+
+    // Concentric capture rings — genuine circles per spoke radius (a bit
+    // lumpy, like hand-spun silk) instead of straight polygon facets.
+    // One ring is left with a small gap, as if she hasn't finished yet.
+    final gapRing = j(99) > 0 ? 2 : 3;
+    final gapSpoke = (spokeCount * (0.5 + j(77) * 0.9)).floor() % spokeCount;
+    for (int ring = 1; ring <= 4; ring++) {
+      final t = ring / 4.0;
       final path = Path();
-      for (int i = 0; i <= framePts.length; i++) {
-        final pt = Offset.lerp(hub, framePts[i % framePts.length], t)!;
-        if (i == 0) {
+      bool started = false;
+      for (int i = 0; i <= spokeCount; i++) {
+        final idx = i % spokeCount;
+        if (ring == gapRing && idx == gapSpoke) {
+          started = false;
+          continue;
+        }
+        final rr = lens[idx] * t * (0.9 + j(idx + ring * 13) * 0.16);
+        final pt = hub + Offset(math.cos(angles[idx]), math.sin(angles[idx])) * rr;
+        if (!started) {
           path.moveTo(pt.dx, pt.dy);
+          started = true;
         } else {
           path.lineTo(pt.dx, pt.dy);
         }
       }
-      c.drawPath(path, silk);
+      c.drawPath(path, ring.isEven ? silkFaint : silk);
     }
 
-    // The spider herself, only visible while actively weaving — crawls
-    // one lap around the frame.
+    // The spider herself, only visible while actively weaving — scurries
+    // out along one spoke and back as she spins the rings.
     if (g.spiderWeaving) {
-      final t = (g.time * 0.6) % 1.0;
-      final seg = (t * framePts.length).floor();
-      final segT = t * framePts.length - seg;
-      final pos = Offset.lerp(
-          framePts[seg % framePts.length],
-          framePts[(seg + 1) % framePts.length],
-          segT)!;
+      final a = angles[0];
+      final len = lens[0];
+      final tt = (g.time * 0.5) % 1.0;
+      final travel = tt < 0.5 ? tt * 2 : (1 - tt) * 2;
+      final pos = hub + Offset(math.cos(a), math.sin(a)) * (len * travel);
       final body = Paint()..color = const Color(0xFF1E1B22);
       c.drawCircle(pos, 4, body);
       c.drawCircle(pos.translate(-3, -2), 2.2, body);
@@ -1378,13 +1448,13 @@ class ScenePainter extends CustomPainter {
         ..color = const Color(0xFF1E1B22)
         ..strokeWidth = 1.2;
       for (int i = 0; i < 4; i++) {
-        final a = (i - 1.5) * 0.5;
-        c.drawLine(pos, pos + Offset(math.cos(a) * 7, math.sin(a) * 7 - 3),
+        final la = (i - 1.5) * 0.5;
+        c.drawLine(pos, pos + Offset(math.cos(la) * 7, math.sin(la) * 7 - 3),
             leg);
         c.drawLine(
             pos,
             pos +
-                Offset(math.cos(math.pi - a) * 7, math.sin(math.pi - a) * 7 - 3),
+                Offset(math.cos(math.pi - la) * 7, math.sin(math.pi - la) * 7 - 3),
             leg);
       }
     }

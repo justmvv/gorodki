@@ -1399,6 +1399,7 @@ class GameController extends ChangeNotifier {
         _rng.nextDouble() < 0.05) {
       spiderWeaving = true;
       _spiderT = 0;
+      webSeed = _rng.nextDouble() * 1000;
       _sfx('boing');
       _say('🕷️', L10n.t.spiderWeaving, ttl: 4);
     }
