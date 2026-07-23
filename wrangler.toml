@@ -1,0 +1,11 @@
+# Cloudflare Workers — static assets deployment (assets-only Worker).
+# Free plan: unlimited bandwidth and static requests.
+# Deployed from GitHub Actions, see .github/workflows/deploy.yml
+
+name = "gorodki"
+compatibility_date = "2026-07-01"
+
+[assets]
+directory = "./build/web"
+# Flutter web is a single-page app: unknown paths fall back to index.html
+not_found_handling = "single-page-application"
