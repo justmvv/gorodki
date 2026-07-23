@@ -175,6 +175,7 @@ class GameController extends ChangeNotifier {
   double _spiderT = 0;
   double webAlpha = 0; // 0..1, for fade in/out in the painter
   bool _webChecked = false; // once per throw
+  double webSeed = 0; // fixes this web's asymmetric shape until it fades
   double hogX = 0;
   bool hogCurled = false;
   double _hogCurlT = 0;
