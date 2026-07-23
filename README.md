@@ -40,6 +40,49 @@ Official rules implemented:
   on your cap: you clutch your head, squat, and crawl off the field.
 * **The quadcopter** — occasionally descends on patrol and confiscates
   your bat mid-air. Estimated delivery: 3–5 business days.
+* **The mole** — rarely surfaces right inside the gorod, scatters and
+  topples your remaining pins, and leaves looking proud of itself.
+
+## Level 2: the evening yard 🌇
+
+Clear all 15 figures and dusk falls — a new courtyard, lit by a low red
+sun. It plays harder: **20% of throws are caught by a gust of wind**,
+and the hazards change completely: a parked car (alarm, an angry
+profile in the window, and eventually the owner himself, in slippers),
+an open manhole with a resident who catches bats mid-flight, an actual
+bat (the animal) with a chaotic zigzag flight instead of the pigeon,
+a breakable streetlamp (the yard gets darker without it), and a
+hedgehog that bounces your bat right back.
+
+Dev cheat: press **K**, then **U** — a level select menu appears.
+
+## Level 3: the winter yard ❄️
+
+Clear level 2 and the whole yard turns white overnight — bright sun,
+blue sky, and your player now bundled up in a knit hat and scarf. It's
+the hardest round: **wind now derails 40% of throws**, the mole is
+asleep for the season, but new locals have opinions:
+
+* **The yolka** — a decorated tree with a star on top; the bat can get
+  stuck in its branches for a couple of seconds.
+* **The snowman** — a sturdy 3-hit obstacle: loses his bucket, then his
+  head, then he's just a stump.
+* **The frozen puddle** — no splash, just an uncontrollable ice slide
+  that carries the bat much further than intended.
+* **The insolent crow** — replaces the pigeon. She still poops on
+  players who nap too long, but she'll also swoop down between throws
+  and relocate one of your standing gorodki purely to spite you.
+* **A kid on a sled** — occasionally zooms through at ground level and
+  makes off with the bat.
+* **The roof avalanche** — rare and unrelated to your throws: a chunk
+  of snow slides off a roof and buries the player up to the neck.
+  It's an instant level loss — level 3 restarts from figure 1.
+
+## Languages 🌍
+
+English, Deutsch, Español, Nederlands. The app picks the language from
+the device locale at startup (offline, falls back to English); switch
+any time via the flag button next to the sound toggles.
 
 ## Sound 🎵
 

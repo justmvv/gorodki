@@ -50,7 +50,37 @@ class World {
   static const double ropeX2 = 11.5;
   static const double ropeY = 2.75;
 
-  // A deep, philosophical puddle.
+  // --- Level 2: the evening yard ---------------------------------------
+  // Somebody's pride and joy, parked IN the court.
+  static const double carX1 = 11.3;
+  static const double carX2 = 13.2;
+  static const double carH = 1.45;
+  // An open manhole with a resident.
+  static const double manholeX = 10.0;
+  static const double manholeR = 0.4;
+  // The streetlamps — one nearer the gorod, one further into the yard
+  // (drawn slightly smaller to suggest depth). They flank the gorod
+  // tightly on purpose: the spider's web (below) spans the gap between
+  // their poles, directly across the throwing lane into the square.
+  static const double lampX = 14.4;
+  static const double lampX2 = 17.6;
+  static const double lampY = 3.2;
+
+  // The spider weaves her web directly between the two lamp POLES (not
+  // floating between their tops) — a proper frame anchored high and low
+  // on each pole, low enough to actually threaten a throw into the gorod.
+  static const double webTopY = 2.25;
+  static const double webBottomY = 0.35;
+
+  // --- Level 3: the winter yard ----------------------------------------
+  // The yolka, complete with star.
+  static const double treeX = 12.15;
+  static const double treeH = 3.0;
+  // The snowman (heights per demolition stage).
+  static const double snowmanX = 10.45;
+  static const List<double> snowmanHeights = [1.6, 1.15, 0.7];
+
+  // A deep, philosophical puddle (frozen solid in winter).
   static const double puddleX1 = 13.6;
   static const double puddleX2 = 14.3;
 }

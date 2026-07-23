@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 
 import 'figures.dart';
+import 'strings.dart';
 import 'world.dart';
 
 /// What the game is currently doing.
@@ -17,6 +18,12 @@ enum Phase {
   broomChase, // Uncle Gena has had enough of bottle abuse
   batBonk, // the bat came back; player clutches head and crawls away
   droneCarry, // a quadcopter has confiscated the bat
+  moleAttack, // a mole surfaces in the gorod and redecorates the figure
+  ownerChase, // the car owner, in slippers, restores order (level 2)
+  manholeGrab, // the manhole resident has acquired your bat (level 2)
+  crowSteal, // the crow relocates one of your pins (level 3)
+  snowBury, // roof avalanche: only the head sticks out — level lost (level 3)
+  sledCarry, // a kid on a sled has made off with the bat (level 3)
   cooldown, // short pause before the next throw / figure
   gameOver,
 }
@@ -27,6 +34,8 @@ class Pin {
   bool standing = true; // part of the figure, waiting to be hit
   bool flying = false; // knocked, tumbling through the air
   bool removed = false; // gone from the square (scored)
+  bool toppled = false; // knocked over (but not out) by the mole
+  double offsetU = 0; // mole-induced displacement along the throw axis
 
   // Flight state.
   double fx = 0, fy = 0, fvx = 0, fvy = 0, fang = 0, fspin = 0;
@@ -34,7 +43,7 @@ class Pin {
   Pin(this.spec);
 
   /// World x of the pin while standing/lying in the square.
-  double get worldX => World.gorodFront + spec.u;
+  double get worldX => World.gorodFront + spec.u + offsetU;
 }
 
 /// The bat in flight.
@@ -43,6 +52,10 @@ class Bat {
   bool active = false;
   bool onRope = false; // tangled in the laundry
   double ropeSwing = 0; // swing phase while hanging
+  bool inTree = false; // lodged in the yolka's branches (level 3)
+  double treeSwing = 0;
+  bool onWeb = false; // tangled in the spider's web (level 2)
+  double webSwing = 0;
 }
 
 class Pigeon {
@@ -114,10 +127,65 @@ class GameController extends ChangeNotifier {
   bool drunkardChasing = false;
   double drunkardX = World.benchX + 0.7;
 
-  // Idle punishment: the pigeon strikes back.
+  // Idle punishment: the pigeon (or bat, or crow) strikes back.
   double idleT = 0;
   double _idleLimit = 18;
   bool playerSoiled = false;
+
+  // Level 2: the bat throws a rotten fruit instead of pooping. It never
+  // actually touches the player — it lobs the fruit and wings off.
+  bool fruitFlying = false;
+  double fruitX = 0, fruitY = 0, fruitVx = 0, fruitVy = 0;
+  bool _fruitThrown = false;
+
+  // ---- Level 2: the evening yard --------------------------------------
+  int level = 1;
+  bool get evening => level == 2;
+  bool get winter => level == 3;
+
+  // ---- Level 3: the winter yard ---------------------------------------
+  int snowmanStage = 0; // 0 = pristine ... 3 = humble stump
+  bool _iceSaid = false;
+  bool sledActive = false;
+  double sledX = 0;
+  bool sledHasBat = false;
+  bool playerBuried = false;
+  double snowChunkY = 8;
+  // Crow theft.
+  double crowX = 0, crowY = 0;
+  int _crowPin = -1;
+  double _crowDropU = 1.0;
+  int crowStage = 0; // 0 approach, 1 carry, 2 leave
+  int carHits = 0;
+  double alarmT = 0; // car alarm lights flashing
+  double ownerWindowT = 0; // angry profile in the window
+  bool ownerChasing = false;
+  bool ownerFacingRight = true; // faces the player while chasing
+  double ownerX = 1.4;
+  bool lampBroken = false;
+  bool lampBroken2 = false;
+  bool manholeManUp = false;
+  bool _manholeChecked = false; // once per throw
+  bool _treeChecked = false; // once per throw (level 3)
+  bool hogActive = false;
+
+  // The spider, who occasionally weaves a web between the two lamps.
+  bool spiderWeaving = false; // actively spinning right now
+  bool webActive = false; // web is finished and can snag the bat
+  double _spiderT = 0;
+  double webAlpha = 0; // 0..1, for fade in/out in the painter
+  bool _webChecked = false; // once per throw
+  double hogX = 0;
+  bool hogCurled = false;
+  double _hogCurlT = 0;
+
+  // The mole.
+  bool moleOut = false;
+  double moleU = 1.0; // position across the gorod (0..2)
+  bool _moleScattered = false;
+
+  /// Mole animation clock for the painter (valid while [moleOut]).
+  double get moleT => _eventT;
 
   // Window.
   bool windowBroken = false;
@@ -150,7 +218,8 @@ class GameController extends ChangeNotifier {
     _idleLimit = 15 + _rng.nextDouble() * 10;
     _setupFigure();
     _startPreview();
-    _say('🏏', 'Figure 1: ${figure.name}. Drag back from the player to aim!');
+    _say('🏏',
+        tr(L10n.t.figureIntro, {'name': L10n.t.figureNames[figureIndex]}));
   }
 
   void _startPreview() {
@@ -172,24 +241,45 @@ class GameController extends ChangeNotifier {
     playerX = throwLineX;
   }
 
-  void newGame() {
+  void newGame({int startLevel = 1}) {
+    level = startLevel;
     figureIndex = 0;
     throwsTotal = 0;
     windowBroken = false;
     bottleHits = 0;
+    carHits = 0;
+    alarmT = 0;
+    ownerWindowT = 0;
+    ownerChasing = false;
+    lampBroken = false;
+    lampBroken2 = false;
+    spiderWeaving = false;
+    webActive = false;
+    webAlpha = 0;
+    hogActive = false;
+    manholeManUp = false;
     _broomThreshold = 3 + _rng.nextInt(4);
     drunkardChasing = false;
     playerSoiled = false;
+    fruitFlying = false;
+    _fruitThrown = false;
     playerFleeing = false;
     playerRunOffset = 0;
     pigeon.active = false;
     drone.active = false;
     playerBonked = false;
     bonkCrawling = false;
+    moleOut = false;
     idleT = 0;
+    snowmanStage = 0;
+    sledActive = false;
+    sledHasBat = false;
+    playerBuried = false;
+    bat.inTree = false;
     _setupFigure();
     _startPreview();
-    _say('🏏', 'New game! Figure 1: ${figure.name}.');
+    _say('🏏',
+        tr(L10n.t.newGameMsg, {'name': L10n.t.figureNames[figureIndex]}));
     notifyListeners();
   }
 
@@ -227,6 +317,25 @@ class GameController extends ChangeNotifier {
     throwsThisFigure++;
     _throwHadContact = false;
     _ropeChecked = false;
+    _manholeChecked = false;
+    _treeChecked = false;
+    _webChecked = false;
+    _iceSaid = false;
+
+    // Wind: 20% of evening throws, a brutal 40% of winter ones.
+    final windChance = winter ? 0.4 : (evening ? 0.2 : 0.1);
+    if (windChance > 0 && _rng.nextDouble() < windChance) {
+      aimVx *= 0.65 + _rng.nextDouble() * 0.7;
+      aimVy *= 0.7 + _rng.nextDouble() * 0.6;
+      _say('💨', L10n.t.windGust, ttl: 2.5);
+    }
+
+    // Level 3: a kid on a sled may cross the yard.
+    if (winter && !sledActive && _rng.nextDouble() < 0.10) {
+      sledActive = true;
+      sledX = World.width + 1;
+      sledHasBat = false;
+    }
 
     bat
       ..active = true
@@ -238,6 +347,13 @@ class GameController extends ChangeNotifier {
       ..angle = 0
       ..spin = -(speed * 1.1);
 
+    // Level 2 only: a hedgehog may wander across the field.
+    if (evening && !hogActive && _rng.nextDouble() < 0.12) {
+      hogActive = true;
+      hogX = World.gorodBack + 1.5;
+      hogCurled = false;
+    }
+
     // Occasionally the local air force takes an interest.
     final roll = _rng.nextDouble();
     if (roll < 0.09) {
@@ -248,7 +364,8 @@ class GameController extends ChangeNotifier {
         ..y = 3.6 + _rng.nextDouble() * 1.6
         ..vx = -3.2 - _rng.nextDouble() * 1.5
         ..vy = 0;
-    } else if (roll < 0.15 && !drone.active) {
+    } else if (roll < 0.15 && !drone.active && level == 1) {
+      // The quadcopter flies only in good daylight (optics, warranty).
       // A quadcopter descends on patrol.
       drone
         ..active = true
@@ -286,6 +403,41 @@ class GameController extends ChangeNotifier {
     messages.removeWhere((m) => m.ttl <= 0);
 
     if (splashT > 0) splashT -= dt;
+    if (alarmT > 0) alarmT -= dt;
+    if (ownerWindowT > 0) ownerWindowT -= dt;
+    if (hogActive) {
+      if (hogCurled) {
+        _hogCurlT -= dt;
+        if (_hogCurlT <= 0) hogCurled = false;
+      } else {
+        hogX -= 0.45 * dt;
+        if (hogX < 9.0) hogActive = false;
+      }
+    }
+    if (sledActive && phase != Phase.sledCarry) {
+      sledX -= 5.5 * dt;
+      if (sledX < -2) sledActive = false;
+    }
+    // The spider: weaves for ~2.5s, then the web stands for a while,
+    // then fades away as she moves on to other projects.
+    if (spiderWeaving) {
+      _spiderT += dt;
+      webAlpha = (_spiderT / 2.5).clamp(0.0, 1.0).toDouble();
+      if (_spiderT > 2.5) {
+        spiderWeaving = false;
+        webActive = true;
+        _spiderT = 0;
+      }
+    } else if (webActive) {
+      _spiderT += dt;
+      if (_spiderT > 14) {
+        webAlpha = (1 - (_spiderT - 14) / 1.5).clamp(0.0, 1.0).toDouble();
+        if (_spiderT > 15.5) {
+          webActive = false;
+          webAlpha = 0;
+        }
+      }
+    }
     if (drunkardAngry) {
       drunkardAngryT -= dt;
       if (drunkardAngryT <= 0) drunkardAngry = false;
@@ -312,6 +464,22 @@ class GameController extends ChangeNotifier {
         _tickBatBonk(dt);
       case Phase.droneCarry:
         if (!drone.active) _endThrow();
+      case Phase.moleAttack:
+        _tickMole(dt);
+      case Phase.ownerChase:
+        _tickOwnerChase(dt);
+      case Phase.manholeGrab:
+        _eventT += dt;
+        if (_eventT > 2.4) {
+          manholeManUp = false;
+          _endThrow();
+        }
+      case Phase.sledCarry:
+        _tickSledCarry(dt);
+      case Phase.crowSteal:
+        _tickCrowSteal(dt);
+      case Phase.snowBury:
+        _tickSnowBury(dt);
       case Phase.cooldown:
         _cooldownT -= dt;
         if (_cooldownT <= 0) _startNextThrow();
@@ -340,6 +508,29 @@ class GameController extends ChangeNotifier {
       }
       return;
     }
+    if (bat.inTree) {
+      bat.treeSwing += dt;
+      if (bat.treeSwing > 2.0) {
+        // Branches give up; the bat tumbles free with a little outward
+        // nudge so it actually leaves the branch zone instead of
+        // drifting straight back into it.
+        bat.inTree = false;
+        bat.vx = (_rng.nextBool() ? 1 : -1) * (1.0 + _rng.nextDouble());
+        bat.vy = -0.5;
+      }
+      return;
+    }
+    if (bat.onWeb) {
+      bat.webSwing += dt;
+      if (bat.webSwing > 1.8) {
+        // The silk finally gives; the bat drops free with an outward
+        // nudge so it can't immediately re-snag the same strand.
+        bat.onWeb = false;
+        bat.vx = (_rng.nextBool() ? 1 : -1) * (1.0 + _rng.nextDouble());
+        bat.vy = -0.5;
+      }
+      return;
+    }
 
     bat.vy -= World.g * dt;
     bat.x += bat.vx * dt;
@@ -354,9 +545,12 @@ class GameController extends ChangeNotifier {
         pigeon.vx = -2.5;
         pigeon.vy = 2.8;
         phase = Phase.pigeonCarry;
-        _sfx('coo');
-        _say('🕊️', 'A pigeon has requisitioned your bat for the flock. '
-            'It offered no receipt.');
+        _sfx(evening ? 'coo' : (winter ? 'caw' : 'coo'));
+        _say(
+            evening ? '🦇' : (winter ? '🐦‍⬛' : '🕊️'),
+            evening
+                ? L10n.t.batSteal
+                : (winter ? L10n.t.crowBatSteal : L10n.t.pigeonSteal));
         return;
       }
     }
@@ -368,8 +562,7 @@ class GameController extends ChangeNotifier {
         drone.carrying = true;
         phase = Phase.droneCarry;
         _sfx('drone');
-        _say('🚁', 'A quadcopter has intercepted your bat! '
-            'Estimated delivery: 3–5 business days.');
+        _say('🚁', L10n.t.droneIntercept);
         return;
       }
     }
@@ -388,8 +581,141 @@ class GameController extends ChangeNotifier {
       return;
     }
 
-    // --- Laundry line -------------------------------------------------
-    if (!_ropeChecked &&
+    // --- Level 2 hazards -------------------------------------------------
+    if (evening) {
+      // The car.
+      if (bat.x > World.carX1 && bat.x < World.carX2 && bat.y < World.carH) {
+        _hitCar();
+        if (phase != Phase.flying) return; // owner chase started
+        bat.vx *= -0.2; // bounces off the bodywork
+        bat.x = World.carX1 - 0.05;
+      }
+      // The manhole resident.
+      if (!_manholeChecked &&
+          !manholeManUp &&
+          (bat.x - World.manholeX).abs() < World.manholeR &&
+          bat.y < 1.2) {
+        _manholeChecked = true;
+        if (_rng.nextDouble() < 0.35) {
+          manholeManUp = true;
+          bat.active = false;
+          phase = Phase.manholeGrab;
+          _eventT = 0;
+          _throwHadContact = true;
+          _sfx('boing');
+          _say('🕳️', L10n.t.manholeSteal, ttl: 4.5);
+          return;
+        }
+      }
+      // The streetlamps.
+      if (!lampBroken &&
+          (bat.x - World.lampX).abs() < 0.3 &&
+          bat.y > 2.8 &&
+          bat.y < 3.7) {
+        lampBroken = true;
+        bat.vx *= 0.6;
+        _throwHadContact = true;
+        _sfx('glass');
+        _say('💡', L10n.t.lampOut, ttl: 4);
+      }
+      if (!lampBroken2 &&
+          (bat.x - World.lampX2).abs() < 0.3 &&
+          bat.y > 2.8 &&
+          bat.y < 3.7) {
+        lampBroken2 = true;
+        bat.vx *= 0.6;
+        _throwHadContact = true;
+        _sfx('glass');
+        _say('💡', L10n.t.lampOut, ttl: 4);
+      }
+      // The spider's web, woven directly between the two lamp poles —
+      // low enough to actually threaten a throw headed into the gorod.
+      if (webActive &&
+          !_webChecked &&
+          !bat.onWeb &&
+          bat.x > World.lampX &&
+          bat.x < World.lampX2 &&
+          bat.y > World.webBottomY &&
+          bat.y < World.webTopY) {
+        _webChecked = true;
+        if (_rng.nextDouble() < 0.5) {
+          bat
+            ..onWeb = true
+            ..webSwing = 0
+            ..vx = 0
+            ..vy = 0;
+          _throwHadContact = true;
+          _sfx('boing');
+          _say('🕸️', L10n.t.webCatch, ttl: 4);
+        }
+      }
+      // The hedgehog.
+      if (hogActive &&
+          !hogCurled &&
+          (bat.x - hogX).abs() < 0.35 &&
+          bat.y < 0.45) {
+        bat.vy = 3.2;
+        bat.vx = -bat.vx * 0.35;
+        hogCurled = true;
+        _hogCurlT = 2.5;
+        _throwHadContact = true;
+        _sfx('boing');
+        _say('🦔', L10n.t.hedgehogMsg, ttl: 4);
+      }
+    }
+
+    // --- Level 3 hazards --------------------------------------------------
+    if (winter) {
+      // The sled kid — a low, fast horizontal intercept.
+      if (sledActive && !sledHasBat && bat.y < 0.9) {
+        if ((bat.x - sledX).abs() < 0.6) {
+          sledHasBat = true;
+          bat.active = false;
+          phase = Phase.sledCarry;
+          _throwHadContact = true;
+          _sfx('whoosh');
+          _say('🛷', L10n.t.sledKid, ttl: 4);
+          return;
+        }
+      }
+      // The yolka: branches may catch the bat. Checked once per throw
+      // (like the laundry line) so the bat can't get re-snagged every
+      // single frame while drifting through the same spot — that was
+      // causing an effectively endless catch-and-drop loop.
+      if (!_treeChecked &&
+          !bat.inTree &&
+          (bat.x - World.treeX).abs() < 0.45 &&
+          bat.y > 0.3 &&
+          bat.y < World.treeH * 0.82) {
+        _treeChecked = true;
+        if (_rng.nextDouble() < 0.4) {
+          bat
+            ..inTree = true
+            ..treeSwing = 0
+            ..vx = 0
+            ..vy = 0;
+          _throwHadContact = true;
+          _sfx('boing');
+          _say('🎄', L10n.t.treeHit, ttl: 4);
+          return;
+        }
+      }
+      // The snowman: a sturdy, gradually shrinking obstacle.
+      if (snowmanStage < World.snowmanHeights.length &&
+          (bat.x - World.snowmanX).abs() < 0.4 &&
+          bat.y < World.snowmanHeights[snowmanStage]) {
+        _sfx('knock');
+        _say('⛄', L10n.t.snowmanLines[snowmanStage], ttl: 3.5);
+        snowmanStage++;
+        bat.vx *= -0.4;
+        bat.vy = math.max(bat.vy, 1.5);
+        _throwHadContact = true;
+      }
+    }
+
+    // --- Laundry line (level 1) ----------------------------------------
+    if (level == 1 &&
+        !_ropeChecked &&
         bat.x > World.ropeX1 &&
         bat.x < World.ropeX2 &&
         (bat.y - World.ropeY).abs() < 0.28) {
@@ -403,14 +729,14 @@ class GameController extends ChangeNotifier {
           ..vy = 0;
         _throwHadContact = true;
         _sfx('boing');
-        _say('🩲', "Your bat is now modeling Uncle Tolya's finest "
-            'underpants. The jury is impressed.');
+        _say('🩲', L10n.t.ropeSnag);
         return;
       }
     }
 
-    // --- Dog kennel -----------------------------------------------------
-    if (bat.x > World.kennelX &&
+    // --- Dog kennel (level 1) -------------------------------------------
+    if (level == 1 &&
+        bat.x > World.kennelX &&
         bat.x < World.kennelX + World.kennelW &&
         bat.y < World.kennelH) {
       bat.active = false;
@@ -426,8 +752,9 @@ class GameController extends ChangeNotifier {
       _hitPinsAt(bat.x);
     }
 
-    // --- The bottle (and its owner) -------------------------------------
-    if (!bottleFlying &&
+    // --- The bottle (and its owner, level 1) -----------------------------
+    if (level == 1 &&
+        !bottleFlying &&
         (bat.x - World.bottleX).abs() < World.bottleR + 0.25 &&
         bat.y < World.bottleH + 0.2) {
       _hitBottle();
@@ -441,15 +768,14 @@ class GameController extends ChangeNotifier {
           windowBroken = true;
           throwsTotal++; // penalty throw
           _sfx('glass');
-          _say('🪟', 'CRASH! A window! Baba Zina: "MY GERANIUMS! '
-              'I know your mother!" (+1 penalty throw)');
+          _say('🪟', L10n.t.windowCrash);
         } else {
           _sfx('knock');
-          _say('🪟', "That window was already broken. Now it's just rude.");
+          _say('🪟', L10n.t.windowAgain);
         }
       } else {
         _sfx('knock');
-        _say('🧱', 'THUD. The building remains unimpressed.');
+        _say('🧱', L10n.t.buildingThud);
       }
       bat.x = World.buildingRX - 0.1;
       bat.vx = -1.5;
@@ -464,18 +790,23 @@ class GameController extends ChangeNotifier {
       } else {
         bat.vy = 0;
       }
-      // Splash!
-      if (splashT <= 0 &&
+      final onIce = winter && bat.x > World.puddleX1 && bat.x < World.puddleX2;
+      // Splash! (Summer/evening only — winter puddles are frozen solid.)
+      if (!winter &&
+          splashT <= 0 &&
           bat.x > World.puddleX1 &&
           bat.x < World.puddleX2 &&
           bat.vx.abs() > 1) {
         splashT = 1.2;
         _sfx('splash');
-        _say('💦', 'SPLASH. A nearby cat looks at you with '
-            'centuries of disappointment.');
+        _say('💦', L10n.t.splashMsg);
       }
-      // Slide with friction.
-      bat.vx *= math.pow(0.05, dt).toDouble();
+      if (onIce && !_iceSaid && bat.vx.abs() > 1) {
+        _iceSaid = true;
+        _say('🧊', L10n.t.iceSlide, ttl: 3);
+      }
+      // Slide with friction (the frozen puddle offers almost none).
+      bat.vx *= math.pow(onIce ? 0.55 : 0.05, dt).toDouble();
       bat.spin *= math.pow(0.02, dt).toDouble();
       if (bat.vx.abs() < 0.4 && bat.vy.abs() < 0.5) {
         bat.active = false;
@@ -547,8 +878,15 @@ class GameController extends ChangeNotifier {
   void _tickPigeon(double dt) {
     if (!pigeon.active) return;
     if (phase == Phase.pigeonStrike) return; // steered by _tickPigeonStrike
-    pigeon.x += pigeon.vx * dt;
-    pigeon.y += pigeon.vy * dt + math.sin(time * 9) * 0.4 * dt;
+    if (evening && !pigeon.carrying) {
+      // A bat flies nothing like a pigeon: lurching speed, zigzag flutter.
+      pigeon.x += pigeon.vx * dt * (0.5 + 0.9 * math.sin(time * 7).abs());
+      pigeon.y += math.sin(time * 13) * 3.2 * dt +
+          math.sin(time * 3.7) * 1.1 * dt;
+    } else {
+      pigeon.x += pigeon.vx * dt;
+      pigeon.y += pigeon.vy * dt + math.sin(time * 9) * 0.4 * dt;
+    }
     if (pigeon.carrying) {
       bat.x = pigeon.x;
       bat.y = pigeon.y - 0.35;
@@ -561,6 +899,12 @@ class GameController extends ChangeNotifier {
       pigeon.active = false;
     }
   }
+
+  // ------------------------------------------------------------------
+  // Level flow
+  // ------------------------------------------------------------------
+
+  void jumpToLevel(int l) => newGame(startLevel: l);
 
   void _tickDrone(double dt) {
     if (!drone.active) return;
@@ -595,14 +939,64 @@ class GameController extends ChangeNotifier {
   // Absurd events
   // ------------------------------------------------------------------
 
+  void _hitCar() {
+    carHits++;
+    alarmT = 3.0;
+    _sfx('siren');
+    _throwHadContact = true;
+    if (carHits == 1) {
+      _sfx('glass');
+      ownerWindowT = 4.5;
+      _say('🚗', L10n.t.carFirst, ttl: 4.5);
+    } else if (carHits >= 3 && _rng.nextDouble() < 0.45) {
+      _startOwnerChase();
+    } else {
+      _say('🚨', L10n.t.carAgain);
+    }
+  }
+
+  void _startOwnerChase() {
+    phase = Phase.ownerChase;
+    ownerChasing = true;
+    ownerFacingRight = true;
+    _eventT = 0;
+    ownerX = 1.4;
+    bat.active = false;
+    throwsTotal++; // penalty throw
+    _say('🥿', L10n.t.ownerChase, ttl: 5);
+  }
+
+  void _tickOwnerChase(double dt) {
+    _eventT += dt;
+    if (_eventT < 1.8) {
+      // Out of the entrance, slippers slapping — facing the player.
+      ownerFacingRight = true;
+      final t = _eventT / 1.8;
+      ownerX = 1.4 + ((playerX - 0.9) - 1.4) * t;
+      if (_eventT > 0.4) {
+        playerFleeing = true;
+        playerRunOffset += dt * 6; // flees RIGHT, past the gorod
+      }
+    } else if (_eventT < 3.6) {
+      // Point made; turns around and stomps back to the entrance.
+      ownerFacingRight = false;
+      playerRunOffset += dt * 4;
+      ownerX += (1.4 - ownerX) * dt * 2;
+    } else {
+      ownerChasing = false;
+      playerFleeing = false;
+      playerRunOffset = 0;
+      _endThrow();
+    }
+  }
+
   void _startBatBonk() {
     phase = Phase.batBonk;
     _eventT = 0;
     playerBonked = true;
     bonkCrawling = false;
     _sfx('bonk');
-    _say('🤕', 'Right on the cap! You clutch your head, squat... '
-        'and crawl off the field with what dignity remains.', ttl: 4.5);
+    _say('🤕', L10n.t.batBonk, ttl: 4.5);
   }
 
   void _tickBatBonk(double dt) {
@@ -623,6 +1017,8 @@ class GameController extends ChangeNotifier {
   void _startPigeonStrike() {
     phase = Phase.pigeonStrike;
     _eventT = 0;
+    _fruitThrown = false;
+    fruitFlying = false;
     pigeon
       ..active = true
       ..carrying = false
@@ -630,53 +1026,131 @@ class GameController extends ChangeNotifier {
       ..y = 7.5
       ..vx = 0
       ..vy = 0;
-    _sfx('coo');
-    _say('🕊️', 'The pigeon grows impatient with your tactical pause...');
+    _sfx(evening ? 'drone' : (winter ? 'caw' : 'coo'));
+    _say(
+        evening ? '🦇' : (winter ? '🐦‍⬛' : '🕊️'),
+        evening
+            ? L10n.t.batImpatient
+            : (winter ? L10n.t.crowImpatient : L10n.t.pigeonImpatient));
+  }
+
+  /// Erratic bat-style flutter velocity aimed roughly at ([tx],[ty]),
+  /// used both while closing in and while winging away afterwards.
+  (double, double) _batFlutter(double fromX, double fromY, double tx,
+      double ty, double speed) {
+    final dx = tx - fromX, dy = ty - fromY;
+    final d = math.sqrt(dx * dx + dy * dy).clamp(0.15, 999).toDouble();
+    final zz = math.sin(time * 16) * 2.6;
+    final zy = math.cos(time * 11) * 1.8;
+    return (dx / d * speed + zz, dy / d * speed + zy);
   }
 
   void _tickPigeonStrike(double dt) {
     _eventT += dt;
-    if (!playerSoiled) {
-      // Dive at the player's cap.
-      final tx = playerX + 0.1, ty = 1.9;
-      final dx = tx - pigeon.x, dy = ty - pigeon.y;
-      final d = math.sqrt(dx * dx + dy * dy);
-      if (d < 0.35) {
+
+    // The thrown fruit, once airborne, always obeys gravity.
+    if (fruitFlying) {
+      fruitVy -= World.g * dt;
+      fruitX += fruitVx * dt;
+      fruitY += fruitVy * dt;
+      if (fruitY <= 1.85) {
+        fruitFlying = false;
         playerSoiled = true;
         playerFleeing = true;
         _eventT = 0;
-        pigeon
-          ..vx = 3.0
-          ..vy = 2.5;
         _sfx('splash');
-        _say('💩', 'Direct hit! The pigeon leaves a one-star review. '
-            'You run off to wash up.', ttl: 4.2);
+        _say('🍎', L10n.t.batHit, ttl: 4.2);
+      }
+    }
+
+    if (!playerSoiled) {
+      if (evening) {
+        // The bat never touches the player at all — it flutters to a
+        // point above the cap, lobs a rotten fruit, then wings off.
+        if (!_fruitThrown) {
+          final tx = playerX + 0.1, ty = 2.7;
+          final dx = tx - pigeon.x, dy = ty - pigeon.y;
+          final d = math.sqrt(dx * dx + dy * dy);
+          if (d < 0.5) {
+            _fruitThrown = true;
+            fruitFlying = true;
+            fruitX = pigeon.x;
+            fruitY = pigeon.y;
+            fruitVx = (playerX + 0.1 - fruitX) / 0.4;
+            fruitVy = 0.6;
+            _sfx('boing');
+          } else {
+            final (vx, vy) = _batFlutter(pigeon.x, pigeon.y, tx, ty, 6.0);
+            pigeon
+              ..vx = vx
+              ..vy = vy
+              ..x += vx * dt
+              ..y += vy * dt;
+          }
+        } else {
+          // Fruit's away — flap off into the evening sky, still erratic.
+          final (vx, vy) =
+              _batFlutter(pigeon.x, pigeon.y, pigeon.x + 6, 8.5, 5.5);
+          pigeon
+            ..vx = vx
+            ..vy = vy
+            ..x += vx * dt
+            ..y += vy * dt;
+          if (pigeon.y > 8.5 || pigeon.x > World.width) pigeon.active = false;
+        }
       } else {
-        // Keep velocity on the pigeon so the sprite faces its dive
-        // direction (down one stroke of the V, up the other).
-        const sp = 6.5;
-        pigeon
-          ..vx = dx / d * sp
-          ..vy = dy / d * sp
-          ..x += dx / d * sp * dt
-          ..y += dy / d * sp * dt;
+        // Pigeon / crow: dive straight at the player's cap.
+        final tx = playerX + 0.1, ty = 1.9;
+        final dx = tx - pigeon.x, dy = ty - pigeon.y;
+        final d = math.sqrt(dx * dx + dy * dy);
+        if (d < 0.35) {
+          playerSoiled = true;
+          playerFleeing = true;
+          _eventT = 0;
+          pigeon
+            ..vx = 3.0
+            ..vy = 2.5;
+          _sfx('splash');
+          _say('💩', winter ? L10n.t.crowHit : L10n.t.pigeonHit, ttl: 4.2);
+        } else {
+          // Keep velocity on the bird so the sprite faces its dive
+          // direction (down one stroke of the V, up the other).
+          const sp = 6.5;
+          pigeon
+            ..vx = dx / d * sp
+            ..vy = dy / d * sp
+            ..x += dx / d * sp * dt
+            ..y += dy / d * sp * dt;
+        }
       }
     } else {
-      // Pigeon departs with dignity; player flees to the washroom.
-      pigeon
-        ..x += pigeon.vx * dt
-        ..y += pigeon.vy * dt;
-      if (pigeon.y > 9) pigeon.active = false;
+      // Departure: player flees to the washroom. The bat/pigeon/crow
+      // keeps flying off on its own (erratically, if it's a bat).
+      if (pigeon.active) {
+        if (evening) {
+          final (vx, vy) =
+              _batFlutter(pigeon.x, pigeon.y, pigeon.x + 6, 8.5, 5.5);
+          pigeon
+            ..x += vx * dt
+            ..y += vy * dt;
+        } else {
+          pigeon
+            ..x += pigeon.vx * dt
+            ..y += pigeon.vy * dt;
+        }
+        if (pigeon.y > 9) pigeon.active = false;
+      }
       playerRunOffset -= dt * 5;
       if (_eventT > 2.6) {
         playerSoiled = false;
         playerFleeing = false;
         playerRunOffset = 0;
         pigeon.active = false;
+        fruitFlying = false;
         idleT = 0;
         _idleLimit = 15 + _rng.nextDouble() * 10;
         phase = Phase.aiming;
-        _say('🧼', 'Freshly washed and ready to continue.');
+        _say('🧼', L10n.t.washed);
       }
     }
   }
@@ -688,8 +1162,7 @@ class GameController extends ChangeNotifier {
     bat.active = false;
     throwsTotal++; // penalty throw
     _sfx('whoosh');
-    _say('🧹', 'That was the LAST one! Uncle Gena grabs the broom and '
-        'sweeps you off the field! (+1 penalty throw)', ttl: 5);
+    _say('🧹', L10n.t.broomChase, ttl: 5);
   }
 
   void _tickBroomChase(double dt) {
@@ -726,8 +1199,7 @@ class GameController extends ChangeNotifier {
     _eventT = 0;
     throwsTotal++; // penalty throw
     _sfx('bark');
-    _say('🐕', 'You hit the kennel! Barbos is escorting you off the '
-        'premises. (+1 penalty throw)', ttl: 4.5);
+    _say('🐕', L10n.t.dogChase, ttl: 4.5);
   }
 
   void _tickDogChase(double dt) {
@@ -768,13 +1240,7 @@ class GameController extends ChangeNotifier {
       _startBroomChase();
       return;
     }
-    const lines = [
-      'The bottle! Uncle Gena shakes his fist: "I was saving that '
-          'for a SPECIAL occasion!"',
-      'Uncle Gena, tragically: "That kefir had sentimental value!"',
-      'Uncle Gena stands up. Sits back down. Shakes fist in your '
-          'general direction. He is running out of patience...',
-    ];
+    final lines = L10n.t.bottleLines;
     _say('🍾', lines[math.min(bottleHits - 1, lines.length - 1)], ttl: 4.2);
   }
 
@@ -796,8 +1262,7 @@ class GameController extends ChangeNotifier {
               ..standing = true
               ..flying = false;
           }
-          _say('✉️', 'The letter stays sealed! Knock out the STAMP '
-              '(center pin) first — the corners walked back.', ttl: 4.5);
+          _say('✉️', L10n.t.letterSealed, ttl: 4.5);
         }
       }
     }
@@ -806,7 +1271,7 @@ class GameController extends ChangeNotifier {
     if (knockedAny && !_figureOpened) {
       _figureOpened = true;
       if (!figure.isLetter) {
-        _say('📏', 'First blood! You now throw from the half-kon (6.5 m).');
+        _say('📏', L10n.t.halfKon);
         fromKon = false;
       }
     }
@@ -817,12 +1282,7 @@ class GameController extends ChangeNotifier {
     }
 
     if (!_throwHadContact && _rng.nextDouble() < 0.3) {
-      const misses = [
-        'Uncle Gena applauds. Ironically.',
-        'A sparrow lands on the gorod and chirps something sarcastic.',
-        'Somewhere, a babushka sighs at your technique.',
-        'The bat rolls away with quiet dignity.',
-      ];
+      final misses = L10n.t.missLines;
       _say('😐', misses[_rng.nextInt(misses.length)]);
     }
     _endThrow();
@@ -830,17 +1290,64 @@ class GameController extends ChangeNotifier {
 
   void _finishFigure() {
     if (figureIndex >= kFigures.length - 1) {
+      if (level == 1) {
+        // Dusk settles over the yard — level 2 begins.
+        level = 2;
+        figureIndex = 0;
+        carHits = 0;
+        alarmT = 0;
+        ownerWindowT = 0;
+        lampBroken = false;
+        lampBroken2 = false;
+        spiderWeaving = false;
+        webActive = false;
+        webAlpha = 0;
+        hogActive = false;
+        manholeManUp = false;
+        drone.active = false;
+        pigeon.active = false;
+        _setupFigure();
+        _sfx('fanfare');
+        _say('🌇', L10n.t.level2Intro, ttl: 6);
+        _startPreview();
+        return;
+      }
+      if (level == 2) {
+        // Overnight, the whole yard turns white — level 3 begins.
+        level = 3;
+        figureIndex = 0;
+        snowmanStage = 0;
+        sledActive = false;
+        manholeManUp = false;
+        lampBroken = false;
+        lampBroken2 = false;
+        spiderWeaving = false;
+        webActive = false;
+        webAlpha = 0;
+        playerBuried = false;
+        drone.active = false;
+        pigeon.active = false;
+        _setupFigure();
+        _sfx('fanfare');
+        _say('🌨️', L10n.t.level3Intro, ttl: 6);
+        _startPreview();
+        return;
+      }
       phase = Phase.gameOver;
       _sfx('gameover');
-      _say('🏆', 'All 15 figures! Total: $throwsTotal throws. '
-          'Even Barbos looks impressed.', ttl: 8);
+      _say('🏆', tr(L10n.t.gameOverMsg, {'n': '$throwsTotal'}), ttl: 8);
       return;
     }
     figureIndex++;
     _setupFigure();
     _sfx('fanfare');
-    _say('🎉', 'Figure cleared! Next: ${figure.name} '
-        '(${figureIndex + 1}/15)${figure.isLetter ? ' — kon only, stamp first!' : ''}',
+    _say(
+        '🎉',
+        tr(L10n.t.figureCleared, {
+          'name': L10n.t.figureNames[figureIndex],
+          'n': '${figureIndex + 1}',
+          'letter': figure.isLetter ? L10n.t.letterHint : '',
+        }),
         ttl: 4);
     _startPreview();
   }
@@ -856,10 +1363,172 @@ class GameController extends ChangeNotifier {
     idleT = 0;
     bat
       ..active = false
-      ..onRope = false;
+      ..onRope = false
+      ..inTree = false;
     aimVx = 0;
     aimVy = 0;
+    // Rarely, the underground resident has opinions about your figure.
+    // (He sleeps through winter — moles are sensible that way.)
+    if (!winter &&
+        throwsThisFigure >= 1 &&
+        pins.where((p) => p.standing).length >= 2 &&
+        _rng.nextDouble() < 0.06) {
+      _startMole();
+      return;
+    }
+    if (winter) {
+      // The roof avalanche: rare, ambient, and unrelated to your aim.
+      if (_rng.nextDouble() < 0.035) {
+        _startSnowBury();
+        return;
+      }
+      // The crow relocates a gorodok when it gets bored.
+      if (throwsThisFigure >= 1 &&
+          pins.where((p) => p.standing).length >= 2 &&
+          _rng.nextDouble() < 0.08) {
+        _startCrowSteal();
+        return;
+      }
+    }
+    // The spider, rarely, decides the space between the lamps needs
+    // decorating. She only bothers if there isn't already a web up.
+    if (evening &&
+        !spiderWeaving &&
+        !webActive &&
+        _rng.nextDouble() < 0.05) {
+      spiderWeaving = true;
+      _spiderT = 0;
+      _sfx('boing');
+      _say('🕷️', L10n.t.spiderWeaving, ttl: 4);
+    }
     phase = Phase.aiming;
+  }
+
+  void _startSnowBury() {
+    phase = Phase.snowBury;
+    playerBuried = true;
+    _eventT = 0;
+    snowChunkY = 8.5;
+    _sfx('rumble');
+    _say('❄️', L10n.t.snowBuryMsg, ttl: 5);
+  }
+
+  void _tickSnowBury(double dt) {
+    _eventT += dt;
+    snowChunkY -= 9 * dt;
+    if (snowChunkY < 0) snowChunkY = 0;
+    if (_eventT > 3.2) {
+      // Winter wins this round: level 3 restarts from figure 1.
+      playerBuried = false;
+      figureIndex = 0;
+      carHits = 0;
+      snowmanStage = 0;
+      lampBroken = false;
+      hogActive = false;
+      sledActive = false;
+      manholeManUp = false;
+      _setupFigure();
+      _startPreview();
+    }
+  }
+
+  void _startCrowSteal() {
+    final standing = pins.where((p) => p.standing).toList();
+    if (standing.isEmpty) {
+      phase = Phase.aiming;
+      return;
+    }
+    _crowPin = pins.indexOf(standing[_rng.nextInt(standing.length)]);
+    phase = Phase.crowSteal;
+    crowStage = 0;
+    _eventT = 0;
+    final pin = pins[_crowPin];
+    crowX = World.gorodFront + pin.spec.u + pin.offsetU;
+    crowY = 7.5;
+    _crowDropU = 0.15 + _rng.nextDouble() * 1.7;
+    _sfx('caw');
+  }
+
+  void _tickCrowSteal(double dt) {
+    _eventT += dt;
+    final pin = pins[_crowPin];
+    final targetX = World.gorodFront + pin.spec.u + pin.offsetU;
+    if (crowStage == 0) {
+      // Swoop down to the pin.
+      final dy = 1.4 - crowY;
+      crowY += dy * dt * 3;
+      crowX += (targetX - crowX) * dt * 3;
+      if (crowY < 1.6) {
+        crowStage = 1;
+        _eventT = 0;
+        pin.standing = false; // aloft, in the crow's grasp
+      }
+    } else if (crowStage == 1) {
+      // Carry it up and across to the drop point.
+      crowY += 2.2 * dt;
+      crowX += ((World.gorodFront + _crowDropU) - crowX) * dt * 1.8;
+      if (crowY > 4.0) {
+        crowStage = 2;
+        _eventT = 0;
+      }
+    } else {
+      // Drop it — the gorodok lands wherever gravity and spite decide.
+      crowY -= 5.5 * dt;
+      if (crowY <= 1.6) {
+        pin
+          ..standing = true
+          ..offsetU = _crowDropU - pin.spec.u
+          ..toppled = true;
+        _sfx('knock');
+        _say('🐦‍⬛', L10n.t.crowStealPin, ttl: 4);
+        phase = Phase.aiming;
+        idleT = 0;
+      }
+    }
+  }
+
+  void _tickSledCarry(double dt) {
+    _eventT += dt;
+    sledX -= 7.0 * dt;
+    if (_eventT > 1.2) {
+      sledActive = false;
+      sledHasBat = false;
+      bat.active = false;
+      _endThrow();
+    }
+  }
+
+  void _startMole() {
+    phase = Phase.moleAttack;
+    moleOut = true;
+    _moleScattered = false;
+    _eventT = 0;
+    moleU = 0.4 + _rng.nextDouble() * 1.2;
+    _sfx('rumble');
+  }
+
+  void _tickMole(double dt) {
+    _eventT += dt;
+    if (!_moleScattered && _eventT > 0.9) {
+      _moleScattered = true;
+      // The mole redecorates: surviving pins hop, topple and shift.
+      for (final p in pins) {
+        if (!p.standing) continue;
+        final newU = (p.spec.u + p.offsetU + (_rng.nextDouble() - 0.5) * 0.9)
+            .clamp(0.15, 1.85)
+            .toDouble();
+        p
+          ..offsetU = newU - p.spec.u
+          ..toppled = true;
+      }
+      _sfx('knock');
+      _say('🐹', L10n.t.moleMsg, ttl: 4.5);
+    }
+    if (_eventT > 2.8) {
+      moleOut = false;
+      phase = Phase.aiming;
+      idleT = 0;
+    }
   }
 
   /// Simulated trajectory preview for aiming (list of world points).

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'game/strings.dart';
 import 'ui/game_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // Pick the best UI language from the device locale (en/de/es/nl,
+  // falls back to English). Works fully offline.
+  L10n.detect();
   // The courtyard looks best in landscape.
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,

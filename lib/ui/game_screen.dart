@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 
 import '../game/audio_manager.dart';
 import '../game/game_controller.dart';
 import '../game/figures.dart';
+import '../game/strings.dart';
 import 'scene_painter.dart';
 
 class GameScreen extends StatefulWidget {
@@ -20,6 +22,8 @@ class _GameScreenState extends State<GameScreen>
   late final Ticker _ticker;
   Duration _last = Duration.zero;
   Offset? _dragStart;
+  final FocusNode _cheatFocus = FocusNode();
+  bool _cheatK = false; // K pressed, waiting for U
 
   @override
   void initState() {
@@ -42,14 +46,64 @@ class _GameScreenState extends State<GameScreen>
     _ticker.dispose();
     game.dispose();
     audio.dispose();
+    _cheatFocus.dispose();
     super.dispose();
+  }
+
+  // Cheat code: K, then U — opens the level select menu.
+  void _onKey(KeyEvent e) {
+    if (e is! KeyDownEvent) return;
+    if (e.logicalKey == LogicalKeyboardKey.keyK) {
+      _cheatK = true;
+    } else if (_cheatK && e.logicalKey == LogicalKeyboardKey.keyU) {
+      _cheatK = false;
+      _showLevelMenu();
+    } else {
+      _cheatK = false;
+    }
+  }
+
+  void _showLevelMenu() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(L10n.t.levelMenuTitle),
+        children: [
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(ctx);
+              game.jumpToLevel(1);
+            },
+            child: Text('☀️  ${L10n.t.level1Name}'),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(ctx);
+              game.jumpToLevel(2);
+            },
+            child: Text('🌇  ${L10n.t.level2Name}'),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(ctx);
+              game.jumpToLevel(3);
+            },
+            child: Text('❄️  ${L10n.t.level3Name}'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF87B5D6),
-      body: AnimatedBuilder(
+      body: KeyboardListener(
+        focusNode: _cheatFocus,
+        autofocus: true,
+        onKeyEvent: _onKey,
+        child: AnimatedBuilder(
         animation: game,
         builder: (context, _) {
           return Stack(
@@ -89,13 +143,15 @@ class _GameScreenState extends State<GameScreen>
             ],
           );
         },
+        ),
       ),
     );
   }
 
   Widget _buildHud() {
     final f = game.figure;
-    final line = (f.isLetter || game.fromKon) ? 'Kon · 13 m' : 'Half-kon · 6.5 m';
+    final t = L10n.t;
+    final line = (f.isLetter || game.fromKon) ? t.lineKon : t.lineHalf;
     return Positioned(
       top: 8,
       left: 12,
@@ -103,29 +159,68 @@ class _GameScreenState extends State<GameScreen>
       child: Row(
         children: [
           _hudChip(
-            '${game.figureIndex + 1}/${kFigures.length}  ${f.name}',
+            '${game.figureIndex + 1}/${kFigures.length}  '
+            '${t.figureNames[game.figureIndex]}',
             sub: f.russianName,
           ),
           const Spacer(),
-          _hudChip('Throws: ${game.throwsTotal}', sub: line),
+          _hudChip('${t.throwsLabel}: ${game.throwsTotal}', sub: line),
           const SizedBox(width: 8),
           _audioButton(
             icon: audio.sfxOn ? Icons.volume_up : Icons.volume_off,
-            tooltip: 'Sound effects',
+            tooltip: t.sfxTooltip,
             active: audio.sfxOn,
             onTap: () => setState(audio.toggleSfx),
           ),
           const SizedBox(width: 6),
           _audioButton(
             icon: audio.musicOn ? Icons.music_note : Icons.music_off,
-            tooltip: '8-bit "Akh, Samara-gorodok"',
+            tooltip: t.musicTooltip,
             active: audio.musicOn,
             onTap: () async {
               await audio.toggleMusic();
               if (mounted) setState(() {});
             },
           ),
+          const SizedBox(width: 6),
+          _languageButton(),
         ],
+      ),
+    );
+  }
+
+  Widget _languageButton() {
+    return PopupMenuButton<GameStrings>(
+      tooltip: L10n.t.langName,
+      onSelected: (lang) => setState(() => L10n.t = lang),
+      itemBuilder: (context) => [
+        for (final lang in kLanguages)
+          PopupMenuItem(
+            value: lang,
+            child: Row(
+              children: [
+                Text(lang.flag, style: const TextStyle(fontSize: 18)),
+                const SizedBox(width: 10),
+                Text(lang.langName,
+                    style: TextStyle(
+                        fontWeight: lang == L10n.t
+                            ? FontWeight.bold
+                            : FontWeight.normal)),
+                if (lang == L10n.t) ...[
+                  const Spacer(),
+                  const Icon(Icons.check, size: 16),
+                ],
+              ],
+            ),
+          ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.55),
+          shape: BoxShape.circle,
+        ),
+        child: Text(L10n.t.flag, style: const TextStyle(fontSize: 18)),
       ),
     );
   }
@@ -242,22 +337,23 @@ class _GameScreenState extends State<GameScreen>
             children: [
               const Text('🏆', style: TextStyle(fontSize: 48)),
               const SizedBox(height: 8),
-              const Text('All 15 figures cleared!',
-                  style: TextStyle(
+              Text(L10n.t.goTitle,
+                  style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF4A3418))),
               const SizedBox(height: 6),
-              Text('Total throws: ${game.throwsTotal}',
+              Text('${L10n.t.goTotal} ${game.throwsTotal}',
                   style:
                       const TextStyle(fontSize: 17, color: Color(0xFF4A3418))),
               const SizedBox(height: 4),
-              const Text('The pigeons rate your performance: "coo".',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF8A6D3B))),
+              Text(L10n.t.goCoo,
+                  style: const TextStyle(
+                      fontSize: 13, color: Color(0xFF8A6D3B))),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: game.newGame,
-                child: const Text('Play again'),
+                child: Text(L10n.t.playAgain),
               ),
             ],
           ),
