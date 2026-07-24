@@ -1156,6 +1156,12 @@ class GameController extends ChangeNotifier {
     if (pigeon.carrying) {
       pigeon.x += 3.2 * dt;
       pigeon.y += 2.2 * dt;
+      // It always climbs away to the right here — keep vx in sync so the
+      // renderer's "mirror when moving right" check actually mirrors it.
+      // Without this, vx is left over from wherever it was on the circle
+      // when it snatched the bat, and half the time the dragon renders
+      // head-left while genuinely flying off to the right: tail-first.
+      pigeon.vx = 1;
       bat.x = pigeon.x;
       bat.y = pigeon.y - 0.4;
       bat.angle += dt * 2;
