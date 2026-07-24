@@ -909,29 +909,33 @@ class GameController extends ChangeNotifier {
             _say('🍦', L10n.t.beachKioskAgain);
           }
         }
-        return;
-      }
-      if (bat.y > World.windowY1 && bat.y < World.windowY2) {
-        if (!windowBroken) {
-          windowBroken = true;
-          throwsTotal++; // penalty throw
-          _sfx('glass');
-          _say('🪟', nightmare ? L10n.t.nightmareWindowCrash : L10n.t.windowCrash);
-          if (nightmare) {
-            _startDragonBreath();
-            return;
+        // No early return here: the bat must keep flying so it still
+        // hits the out-of-bounds check below and the throw resolves.
+        // (A stray `return` here previously left the bat flying forever
+        // off-screen with no new bat ever being dispensed.)
+      } else {
+        if (bat.y > World.windowY1 && bat.y < World.windowY2) {
+          if (!windowBroken) {
+            windowBroken = true;
+            throwsTotal++; // penalty throw
+            _sfx('glass');
+            _say('🪟', nightmare ? L10n.t.nightmareWindowCrash : L10n.t.windowCrash);
+            if (nightmare) {
+              _startDragonBreath();
+              return;
+            }
+          } else {
+            _sfx('knock');
+            _say('🪟', nightmare ? L10n.t.nightmareWindowAgain : L10n.t.windowAgain);
           }
         } else {
           _sfx('knock');
-          _say('🪟', nightmare ? L10n.t.nightmareWindowAgain : L10n.t.windowAgain);
+          _say('🧱', L10n.t.buildingThud);
         }
-      } else {
-        _sfx('knock');
-        _say('🧱', L10n.t.buildingThud);
+        bat.x = World.buildingRX - 0.1;
+        bat.vx = -1.5;
+        bat.vy = math.min(bat.vy, 0.0);
       }
-      bat.x = World.buildingRX - 0.1;
-      bat.vx = -1.5;
-      bat.vy = math.min(bat.vy, 0.0);
     }
 
     // --- Ground ----------------------------------------------------------
