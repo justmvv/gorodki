@@ -621,11 +621,24 @@ class GameController extends ChangeNotifier {
   void _tickBat(double dt) {
     if (bat.onRope) {
       bat.ropeSwing += dt;
-      if (bat.ropeSwing > 2.2) {
-        bat.active = false;
-        _endThrow();
+      final tangleDuration = nightmare ? 1.3 : 2.2;
+      if (bat.ropeSwing > tangleDuration) {
+        bat.onRope = false;
+        if (nightmare) {
+          // Chains don't release you gently like a laundry line does —
+          // they just drop you. Fall through to the normal gravity and
+          // ground-collision handling below instead of ending the throw
+          // mid-air.
+          bat.vx *= 0.2;
+          bat.vy = 0;
+        } else {
+          bat.active = false;
+          _endThrow();
+          return;
+        }
+      } else {
+        return;
       }
-      return;
     }
     if (bat.inTree) {
       bat.treeSwing += dt;

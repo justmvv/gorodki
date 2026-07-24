@@ -2082,10 +2082,13 @@ class ScenePainter extends CustomPainter {
     if (g.bat.onRope) {
       c.rotate(math.pi / 2 + math.sin(g.bat.ropeSwing * 6) * 0.35);
       _batShape(c);
-      // The underpants, now with a new owner.
-      c.rotate(-math.pi / 2);
-      final pantsP = Paint()..color = const Color(0xFFCF6679);
-      c.drawRect(const Rect.fromLTWH(-10, -4, 20, 14), pantsP);
+      if (!g.nightmare) {
+        // The underpants, now with a new owner. (On the nightmare yard
+        // it's chains, not a laundry line — no cloth to snag.)
+        c.rotate(-math.pi / 2);
+        final pantsP = Paint()..color = const Color(0xFFCF6679);
+        c.drawRect(const Rect.fromLTWH(-10, -4, 20, 14), pantsP);
+      }
     } else if (g.bat.inTree) {
       // Lodged among the yolka's branches, gently swaying. This is the
       // single source of truth for the "stuck in tree" sprite — it must
