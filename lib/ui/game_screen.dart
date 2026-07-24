@@ -90,6 +90,20 @@ class _GameScreenState extends State<GameScreen>
             },
             child: Text('❄️  ${L10n.t.level3Name}'),
           ),
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(ctx);
+              game.jumpToLevel(4);
+            },
+            child: Text('🌕  ${L10n.t.level4Name}'),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(ctx);
+              game.jumpToLevel(5);
+            },
+            child: Text('🏖️  ${L10n.t.level5Name}'),
+          ),
         ],
       ),
     );

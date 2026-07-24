@@ -28,9 +28,13 @@ class ScenePainter extends CustomPainter {
     _groundY = size.height * 0.82;
 
     _sky(canvas, size);
-    _clouds(canvas, size);
-    _buildingLeft(canvas, size);
-    _buildingRight(canvas, size);
+    if (!g.nightmare) _clouds(canvas, size);
+    if (g.beach) {
+      _seaBackdrop(canvas, size);
+    } else {
+      _buildingLeft(canvas, size);
+      _buildingRight(canvas, size);
+    }
     _ground(canvas, size);
     _chalkLines(canvas);
     if (g.evening) {
@@ -47,6 +51,9 @@ class ScenePainter extends CustomPainter {
       _snowmanProp(canvas);
       _sledProp(canvas);
     } else {
+      // Level 1, the nightmare yard, and the beach all share this hazard
+      // set (laundry line, kennel, bench) — each function reskins itself
+      // internally based on g.nightmare / g.beach.
       _laundry(canvas);
       _kennel(canvas);
       _bench(canvas);
@@ -123,6 +130,38 @@ class ScenePainter extends CustomPainter {
       c.drawCircle(sun, 20, Paint()..color = const Color(0xFFFFFDF2));
       // A mysterious, twinkling Star of Bethlehem, high overhead.
       _bethlehemStar(c, s);
+    } else if (g.nightmare) {
+      // A hellish, moonlit night: near-black overhead, bruised red low
+      // down where the ordinary yard should be.
+      c.drawRect(
+        r,
+        Paint()
+          ..shader = const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0A0812), Color(0xFF1D0F14), Color(0xFF4A1620)],
+            stops: [0.0, 0.6, 1.0],
+          ).createShader(r),
+      );
+      // A pale, faintly unsettling moon.
+      final moon = Offset(s.width * 0.78, s.height * 0.16);
+      c.drawCircle(moon, 44, Paint()..color = const Color(0x22E8E4D8));
+      c.drawCircle(moon, 28, Paint()..color = const Color(0xFFE8E4D8));
+      final crater = Paint()..color = const Color(0xFFC9C4B4);
+      c.drawCircle(moon.translate(-9, -6), 4, crater);
+      c.drawCircle(moon.translate(6, 4), 5.5, crater);
+      c.drawCircle(moon.translate(2, -10), 3, crater);
+      // Low graveyard fog, drifting past.
+      final fog = Paint()..color = Colors.white.withValues(alpha: 0.05);
+      for (int i = 0; i < 3; i++) {
+        final drift = (g.time * (5 + i * 2) + i * 220) % (s.width + 300);
+        c.drawOval(
+            Rect.fromCenter(
+                center: Offset(drift - 150, _groundY - 12 - i * 10),
+                width: 260,
+                height: 26),
+            fog);
+      }
     } else {
       c.drawRect(
         r,
@@ -134,6 +173,99 @@ class ScenePainter extends CustomPainter {
           ).createShader(r),
       );
     }
+  }
+
+  void _seaBackdrop(Canvas c, Size s) {
+    // The sea, filling in for the usual apartment blocks.
+    final horizonY = s.height * 0.46;
+    final sea = Rect.fromLTRB(0, horizonY, s.width, _groundY);
+    c.drawRect(
+        sea,
+        Paint()
+          ..shader = const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF3E8FBF), Color(0xFF1E5F8A)],
+          ).createShader(sea));
+    // Gentle animated wave crests.
+    final wave = Paint()
+      ..color = Colors.white.withValues(alpha: 0.35)
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke;
+    for (int row = 0; row < 4; row++) {
+      final y = horizonY + 14 + row * 22.0;
+      final offset = (g.time * (18 + row * 4)) % 40;
+      final path = Path();
+      for (double x = -40 + offset; x < s.width + 20; x += 40) {
+        path.moveTo(x, y);
+        path.quadraticBezierTo(x + 10, y - 4, x + 20, y);
+        path.quadraticBezierTo(x + 30, y + 4, x + 40, y);
+      }
+      c.drawPath(path, wave);
+    }
+    // A distant sail, minding its own business.
+    final sailX = s.width * 0.68 + math.sin(g.time * 0.05) * 20;
+    final sailY = horizonY + 6;
+    c.drawLine(Offset(sailX, sailY), Offset(sailX, sailY - 16),
+        Paint()
+          ..color = Colors.white70
+          ..strokeWidth = 1.2);
+    final sail = Path()
+      ..moveTo(sailX, sailY - 15)
+      ..lineTo(sailX + 10, sailY - 4)
+      ..lineTo(sailX, sailY - 3)
+      ..close();
+    c.drawPath(sail, Paint()..color = Colors.white70);
+
+    // Sand dunes framing the shoreline, and a couple of palms for shade
+    // nobody asked for.
+    final duneP = Paint()..color = const Color(0xFFE3C88A);
+    c.drawOval(
+        Rect.fromCenter(
+            center: Offset(s.width * 0.08, _groundY),
+            width: s.width * 0.5,
+            height: 40),
+        duneP);
+    c.drawOval(
+        Rect.fromCenter(
+            center: Offset(s.width * 0.95, _groundY),
+            width: s.width * 0.4,
+            height: 34),
+        duneP);
+
+    _palm(c, _w(0.9, 0));
+    _palm(c, _w(21.6, 0));
+  }
+
+  void _palm(Canvas c, Offset base) {
+    final trunk = Paint()
+      ..color = const Color(0xFF8A6B3F)
+      ..strokeWidth = 7
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    final lean = math.sin(g.time * 0.4) * 3;
+    final top = Offset(base.dx + 14 + lean, base.dy - 92);
+    final trunkPath = Path()..moveTo(base.dx, base.dy);
+    trunkPath.quadraticBezierTo(base.dx + 6, base.dy - 50, top.dx, top.dy);
+    c.drawPath(trunkPath, trunk);
+    final leaf = Paint()..color = const Color(0xFF4E8A4A);
+    for (int i = 0; i < 5; i++) {
+      final a = -math.pi / 2 + (i - 2) * 0.5 + math.sin(g.time * 1.5 + i) * 0.05;
+      final tip = top + Offset(math.cos(a), math.sin(a)) * 34;
+      final p = Path()
+        ..moveTo(top.dx, top.dy)
+        ..quadraticBezierTo(top.dx + math.cos(a + 0.3) * 18,
+            top.dy + math.sin(a + 0.3) * 18, tip.dx, tip.dy)
+        ..quadraticBezierTo(top.dx + math.cos(a - 0.3) * 18,
+            top.dy + math.sin(a - 0.3) * 18, top.dx, top.dy)
+        ..close();
+      c.drawPath(p, leaf);
+    }
+    // A couple of coconuts, because why not.
+    c.drawCircle(
+        top.translate(-3, 6), 3, Paint()..color = const Color(0xFF6B4A2E));
+    c.drawCircle(
+        top.translate(4, 8), 3, Paint()..color = const Color(0xFF6B4A2E));
   }
 
   void _clouds(Canvas c, Size s) {
@@ -180,15 +312,19 @@ class ScenePainter extends CustomPainter {
           wH,
         );
         c.drawRect(rect.inflate(2), frame);
-        // In the evening, some windows glow with kitchen-TV warmth.
+        // In the evening, some windows glow with kitchen-TV warmth; in the
+        // nightmare yard, a rarer few flicker with something greener.
         final lit = g.evening && (r * 3 + col) % 3 == 0;
+        final eerie = g.nightmare && (r * 3 + col) % 4 == 0;
         c.drawRect(
             rect,
-            lit
-                ? (Paint()..color = const Color(0xFFF2CE7E))
-                : g.evening
-                    ? (Paint()..color = const Color(0xFF57616E))
-                    : wall);
+            eerie
+                ? (Paint()..color = const Color(0xFF5FA86A))
+                : lit
+                    ? (Paint()..color = const Color(0xFFF2CE7E))
+                    : (g.evening || g.nightmare)
+                        ? (Paint()..color = const Color(0xFF2A2830))
+                        : wall);
         c.drawLine(rect.topCenter, rect.bottomCenter, frame..strokeWidth = 1.5);
       }
     }
@@ -197,7 +333,11 @@ class ScenePainter extends CustomPainter {
   void _buildingLeft(Canvas c, Size s) {
     final right = _w(1.6, 0).dx;
     final facade = Rect.fromLTRB(-10, s.height * 0.06, right, _groundY);
-    c.drawRect(facade, Paint()..color = const Color(0xFFC9B49A));
+    c.drawRect(
+        facade,
+        Paint()
+          ..color =
+              g.nightmare ? const Color(0xFF2E2A30) : const Color(0xFFC9B49A));
     if (g.winter) {
       c.drawRect(Rect.fromLTWH(facade.left, facade.top, facade.width, 10),
           Paint()..color = const Color(0xFFF3F8FC));
@@ -234,7 +374,11 @@ class ScenePainter extends CustomPainter {
   void _buildingRight(Canvas c, Size s) {
     final left = _w(World.buildingRX, 0).dx;
     final facade = Rect.fromLTRB(left, s.height * 0.03, s.width + 10, _groundY);
-    c.drawRect(facade, Paint()..color = const Color(0xFFB8C0A8));
+    c.drawRect(
+        facade,
+        Paint()
+          ..color =
+              g.nightmare ? const Color(0xFF35313A) : const Color(0xFFB8C0A8));
     if (g.winter) {
       c.drawRect(Rect.fromLTWH(facade.left, facade.top, facade.width, 10),
           Paint()..color = const Color(0xFFF3F8FC));
@@ -268,15 +412,21 @@ class ScenePainter extends CustomPainter {
                 ? (Paint()..color = const Color(0xFF8A5A33))
                 : frame);
         final lit = g.evening && !isZina && (col * 5 + row) % 3 == 0;
+        final eerie = g.nightmare && !isZina && (col * 5 + row) % 4 == 0;
         c.drawRect(
             rect,
             isZina
-                ? (Paint()..color = const Color(0xFFDDEBF2))
-                : lit
-                    ? (Paint()..color = const Color(0xFFF2CE7E))
-                    : g.evening
-                        ? (Paint()..color = const Color(0xFF57616E))
-                        : glass);
+                ? (Paint()
+                  ..color = g.nightmare
+                      ? const Color(0xFFB8D8C0)
+                      : const Color(0xFFDDEBF2))
+                : eerie
+                    ? (Paint()..color = const Color(0xFF5FA86A))
+                    : lit
+                        ? (Paint()..color = const Color(0xFFF2CE7E))
+                        : (g.evening || g.nightmare)
+                            ? (Paint()..color = const Color(0xFF2A2830))
+                            : glass);
         c.drawLine(
             rect.topCenter, rect.bottomCenter, frame..strokeWidth = 1.5);
         if (isZina) _zinaWindow(c, rect);
@@ -352,6 +502,35 @@ class ScenePainter extends CustomPainter {
       }
       return;
     }
+    if (g.beach) {
+      c.drawRect(r, Paint()..color = const Color(0xFFE8CE96));
+      final ripple = Paint()..color = const Color(0xFFD8BA7E);
+      for (final (px, pw) in [(3.0, 1.4), (10.6, 2.0), (17.4, 1.2)]) {
+        c.drawOval(
+            Rect.fromLTWH(_w(px, 0).dx, _groundY + 8, pw * _scale, 14),
+            ripple);
+      }
+      return;
+    }
+    if (g.nightmare) {
+      c.drawRect(r, Paint()..color = const Color(0xFF241E22));
+      // Glowing cracks, because regular asphalt patching wasn't ominous
+      // enough.
+      final crack = Paint()
+        ..color = const Color(0xFFB3402A).withValues(
+            alpha: 0.5 + 0.2 * math.sin(g.time * 2))
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke;
+      for (final px in [3.0, 8.5, 13.0, 17.0, 20.5]) {
+        final o = _w(px, 0);
+        final path = Path()..moveTo(o.dx - 14, _groundY + 4);
+        path.lineTo(o.dx, _groundY + 12);
+        path.lineTo(o.dx + 16, _groundY + 8);
+        path.lineTo(o.dx + 6, _groundY + 20);
+        c.drawPath(path, crack);
+      }
+      return;
+    }
     c.drawRect(r,
         Paint()..color = Color(g.evening ? 0xFF6E655E : 0xFF8D8D85));
     final patch = Paint()..color = Color(g.evening ? 0xFF5E564F : 0xFF7C7C74);
@@ -363,8 +542,15 @@ class ScenePainter extends CustomPainter {
 
   void _chalkLines(Canvas c) {
     // On snow, white chalk vanishes — switch to a dark navy line instead.
-    final lineColor =
-        g.winter ? const Color(0xFF2E4A66) : Colors.white;
+    // In the nightmare yard, chalk gives way to a dull embery red; on the
+    // beach, someone's clearly drawn the lines with a stick in the sand.
+    final lineColor = g.winter
+        ? const Color(0xFF2E4A66)
+        : g.nightmare
+            ? const Color(0xFF8A3A2E)
+            : g.beach
+                ? const Color(0xFF6B4A2E)
+                : Colors.white;
     final chalk = Paint()
       ..color = lineColor.withValues(alpha: 0.9)
       ..strokeWidth = 3;
@@ -413,7 +599,85 @@ class ScenePainter extends CustomPainter {
   // Props
   // ----------------------------------------------------------------
 
+  /// Beach reskin of the laundry line: a taut volleyball net.
+  void _volleyballNet(Canvas c) {
+    final poleP = Paint()
+      ..color = const Color(0xFFE9E3CE)
+      ..strokeWidth = 4;
+    final top1 = _w(World.ropeX1 - 0.15, World.ropeY + 0.35);
+    final top2 = _w(World.ropeX2 + 0.15, World.ropeY + 0.35);
+    final bot1 = _w(World.ropeX1 - 0.15, 0);
+    final bot2 = _w(World.ropeX2 + 0.15, 0);
+    c.drawLine(bot1, top1, poleP);
+    c.drawLine(bot2, top2, poleP);
+
+    final mesh = Paint()
+      ..color = Colors.white.withValues(alpha: 0.6)
+      ..strokeWidth = 1;
+    const cols = 8, rows = 5;
+    for (int i = 0; i <= cols; i++) {
+      final t = i / cols;
+      c.drawLine(Offset.lerp(top1, top2, t)!, Offset.lerp(bot1, bot2, t)!, mesh);
+    }
+    for (int j = 0; j <= rows; j++) {
+      final t = j / rows;
+      c.drawLine(Offset.lerp(top1, bot1, t)!, Offset.lerp(top2, bot2, t)!, mesh);
+    }
+    // The taped top band.
+    c.drawLine(top1, top2, Paint()
+      ..color = const Color(0xFFCF6679)
+      ..strokeWidth = 5);
+  }
+
+  /// Nightmare reskin of the laundry line: rusty chains, swaying, with a
+  /// small lantern (of unclear provenance) hanging from the middle one.
+  void _hangingChains(Canvas c) {
+    final poleP = Paint()
+      ..color = const Color(0xFF2A2830)
+      ..strokeWidth = 4;
+    final p1 = _w(World.ropeX1 - 0.15, 0);
+    final p2 = _w(World.ropeX2 + 0.15, 0);
+    final top1 = _w(World.ropeX1 - 0.15, World.ropeY + 0.35);
+    final top2 = _w(World.ropeX2 + 0.15, World.ropeY + 0.35);
+    c.drawLine(p1, top1, poleP);
+    c.drawLine(p2, top2, poleP);
+
+    final chain = Paint()
+      ..color = const Color(0xFF5A5460)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+    for (final fx in [World.ropeX1 + 0.5, (World.ropeX1 + World.ropeX2) / 2, World.ropeX2 - 0.5]) {
+      final top = _w(fx, World.ropeY + 0.3);
+      final sway = math.sin(g.time * 1.4 + fx) * 6;
+      var y = top.dy;
+      var x = top.dx;
+      for (int i = 0; i < 6; i++) {
+        final nx = top.dx + sway * (i / 6);
+        final ny = y + 8;
+        c.drawOval(Rect.fromCenter(center: Offset((x + nx) / 2, (y + ny) / 2), width: 6, height: 8), chain);
+        x = nx;
+        y = ny;
+      }
+      if (fx == (World.ropeX1 + World.ropeX2) / 2) {
+        // A little lantern, guttering.
+        final flick = 0.6 + 0.3 * math.sin(g.time * 9);
+        c.drawRect(Rect.fromCenter(center: Offset(x, y + 8), width: 10, height: 12),
+            Paint()..color = const Color(0xFF3A342E));
+        c.drawCircle(Offset(x, y + 8), 4,
+            Paint()..color = Color.fromRGBO(255, 140, 60, flick));
+      }
+    }
+  }
+
   void _laundry(Canvas c) {
+    if (g.beach) {
+      _volleyballNet(c);
+      return;
+    }
+    if (g.nightmare) {
+      _hangingChains(c);
+      return;
+    }
     final poleP = Paint()
       ..color = const Color(0xFF5E5E58)
       ..strokeWidth = 4;
@@ -476,11 +740,25 @@ class ScenePainter extends CustomPainter {
       (World.puddleX2 - World.puddleX1) * _scale,
       10,
     );
+    if (g.nightmare) {
+      final glow = 0.6 + 0.2 * math.sin(g.time * 3);
+      c.drawOval(r, Paint()..color = const Color(0xFF2A100C));
+      c.drawOval(r.deflate(3), Paint()..color = Color.fromRGBO(200, 60, 20, glow));
+      return;
+    }
     c.drawOval(r, Paint()..color = const Color(0xFF5F7E96));
     c.drawOval(r.deflate(3), Paint()..color = const Color(0xFF7FA0B8));
   }
 
   void _kennel(Canvas c) {
+    if (g.beach) {
+      _sandcastle(c);
+      return;
+    }
+    if (g.nightmare) {
+      _gravePortal(c);
+      return;
+    }
     final base = _w(World.kennelX, 0);
     final w = World.kennelW * _scale;
     final h = World.kennelH * _scale;
@@ -530,10 +808,157 @@ class ScenePainter extends CustomPainter {
     }
   }
 
-  void _dog(Canvas c, double x, {bool running = false, bool facingRight = false}) {
+  /// Beach reskin of the kennel: a sandcastle guarded by a territorial crab.
+  void _sandcastle(Canvas c) {
+    final base = _w(World.kennelX, 0);
+    final w = World.kennelW * _scale;
+    final h = World.kennelH * _scale;
+    final sand = Paint()..color = const Color(0xFFE3C88A);
+    final sandDark = Paint()..color = const Color(0xFFC9A968);
+
+    final body = Rect.fromLTWH(base.dx, base.dy - h * 0.6, w, h * 0.6);
+    c.drawRect(body, sand);
+    for (final tx in [body.left + 4, body.right - 16]) {
+      c.drawRect(Rect.fromLTWH(tx, body.top - 14, 14, 14), sand);
+      for (int i = 0; i < 3; i++) {
+        c.drawRect(Rect.fromLTWH(tx + i * 5.0 - 1, body.top - 16, 3, 4), sandDark);
+      }
+    }
+    c.drawArc(Rect.fromLTWH(body.center.dx - 8, body.bottom - 16, 16, 16),
+        math.pi, math.pi, true, sandDark);
+    final flagX = body.center.dx;
+    c.drawLine(Offset(flagX, body.top - 14), Offset(flagX, body.top - 30),
+        Paint()
+          ..color = const Color(0xFF6B4A2E)
+          ..strokeWidth = 2);
+    final flag = Path()
+      ..moveTo(flagX, body.top - 30)
+      ..lineTo(flagX + 12, body.top - 26)
+      ..lineTo(flagX, body.top - 22)
+      ..close();
+    c.drawPath(flag, Paint()..color = const Color(0xFFCF6679));
+    final tp = TextPainter(
+      text: const TextSpan(
+          text: 'CRABBY',
+          style: TextStyle(
+              color: Color(0xFF6B4A2E),
+              fontSize: 8,
+              fontWeight: FontWeight.bold)),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(c, Offset(body.center.dx - tp.width / 2, body.top + 3));
+
+    if (g.dogOut) {
+      _crab(c, g.dogX, running: true, facingRight: g.dogFacingRight);
+    } else {
+      final peek = body.center.translate(0, h * 0.05);
+      c.drawCircle(peek, w * 0.1, Paint()..color = const Color(0xFFD8543C));
+    }
+  }
+
+  void _crab(Canvas c, double x, {bool running = false, bool facingRight = false}) {
+    final o = _w(x, 0);
+    final k = _scale;
+    final body = Paint()..color = const Color(0xFFD8543C);
+    final bounce = running ? math.sin(g.time * 20) * 3 : 0.0;
+    final center = Offset(o.dx, o.dy - 0.16 * k + bounce);
+
+    c.save();
+    if (facingRight) {
+      c.translate(o.dx * 2, 0);
+      c.scale(-1, 1);
+    }
+    c.drawOval(
+        Rect.fromCenter(center: center, width: 0.4 * k, height: 0.24 * k),
+        body);
+    for (final side in [-1.0, 1.0]) {
+      final stalk = center.translate(side * 0.1 * k, -0.12 * k);
+      c.drawLine(center.translate(side * 0.08 * k, -0.02 * k), stalk,
+          Paint()
+            ..color = body.color
+            ..strokeWidth = 2);
+      c.drawCircle(stalk, 2.2, Paint()..color = Colors.black);
+    }
+    final clawPhase =
+        running ? math.sin(g.time * 20) * 6 : math.sin(g.time * 3) * 3;
+    for (final side in [-1.0, 1.0]) {
+      final claw = center.translate(side * 0.22 * k, 0.02 * k + clawPhase * side);
+      c.drawCircle(claw, 5, body);
+      c.drawCircle(claw.translate(side * 3, -2), 3, body);
+    }
+    final leg = Paint()
+      ..color = body.color
+      ..strokeWidth = 3;
+    for (int i = 0; i < 3; i++) {
+      final legPhase = running ? math.sin(g.time * 20 + i) * 5 : 0.0;
+      for (final side in [-1.0, 1.0]) {
+        final lx = center.dx + side * (0.05 * k + i * 0.05 * k);
+        c.drawLine(Offset(lx, center.dy + 0.08 * k),
+            Offset(lx + legPhase, center.dy + 0.16 * k), leg);
+      }
+    }
+    c.restore();
+
+    if (running && !facingRight) {
+      final tp = TextPainter(
+        text: const TextSpan(
+            text: 'CLICK CLICK',
+            style: TextStyle(
+                color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(c, center.translate(-32, -32));
+    }
+  }
+
+  /// Nightmare reskin of the kennel: a crooked grave doubling as a portal,
+  /// guarded by a rather more literal hellhound.
+  void _gravePortal(Canvas c) {
+    final base = _w(World.kennelX, 0);
+    final w = World.kennelW * _scale;
+    final h = World.kennelH * _scale;
+    final stone = Paint()..color = const Color(0xFF3A3640);
+    final body = Rect.fromLTWH(base.dx, base.dy - h * 0.72, w, h * 0.72);
+    c.drawRRect(
+        RRect.fromRectAndCorners(body,
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18)),
+        stone);
+    final glow = 0.5 + 0.3 * math.sin(g.time * 3);
+    final holeCenter = body.center.translate(0, h * 0.08);
+    c.drawOval(
+        Rect.fromCenter(center: holeCenter, width: w * 0.4, height: h * 0.46),
+        Paint()..color = Color.fromRGBO(120, 20, 20, 0.5 + glow * 0.3));
+    c.drawOval(
+        Rect.fromCenter(center: holeCenter, width: w * 0.28, height: h * 0.32),
+        Paint()..color = const Color(0xFFE65A28).withValues(alpha: 0.6));
+    final tp = TextPainter(
+      text: const TextSpan(
+          text: 'R.I.P. ROVER',
+          style: TextStyle(
+              color: Color(0xFFAFA8B8),
+              fontSize: 8,
+              fontWeight: FontWeight.bold)),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(c, Offset(body.center.dx - tp.width / 2, body.top + 3));
+
+    if (g.dogOut) {
+      _dog(c, g.dogX, running: true, facingRight: g.dogFacingRight, hellish: true);
+    } else {
+      c.drawCircle(holeCenter.translate(-w * 0.05, -h * 0.02), 2,
+          Paint()..color = const Color(0xFFFF3B30));
+      c.drawCircle(holeCenter.translate(w * 0.05, -h * 0.02), 2,
+          Paint()..color = const Color(0xFFFF3B30));
+    }
+  }
+
+  void _dog(Canvas c, double x,
+      {bool running = false, bool facingRight = false, bool hellish = false}) {
     final o = _w(x, 0);
     final k = _scale; // pixels per meter
-    final body = Paint()..color = const Color(0xFFC98A4B);
+    final body = Paint()
+      ..color = hellish ? const Color(0xFF241E22) : const Color(0xFFC98A4B);
     final bounce = running ? math.sin(g.time * 18) * 3 : 0.0;
 
     c.save();
@@ -562,9 +987,18 @@ class ScenePainter extends CustomPainter {
         Paint()..color = const Color(0xFF9A6432));
     // Eye + nose.
     c.drawCircle(head.translate(-0.05 * k, -0.03 * k), 1.8,
-        Paint()..color = Colors.black);
+        Paint()..color = hellish ? const Color(0xFFFF3B30) : Colors.black);
     c.drawCircle(head.translate(-0.13 * k, 0.02 * k), 2.5,
         Paint()..color = Colors.black87);
+    if (hellish) {
+      // Two extra heads, because one Barbos was never going to be enough.
+      for (final side in [-1.0, 1.0]) {
+        final extra = head.translate(side * 0.12 * k, 0.06 * k);
+        c.drawCircle(extra, 0.09 * k, body);
+        c.drawCircle(extra.translate(-0.03 * k, -0.02 * k), 1.4,
+            Paint()..color = const Color(0xFFFF3B30));
+      }
+    }
     // Legs (blurred windmill while running).
     final leg = Paint()
       ..color = const Color(0xFF9A6432)
@@ -587,9 +1021,9 @@ class ScenePainter extends CustomPainter {
     // the mirrored canvas so the text never flips).
     if (running && !facingRight) {
       final tp = TextPainter(
-        text: const TextSpan(
-            text: 'WOOF!!',
-            style: TextStyle(
+        text: TextSpan(
+            text: hellish ? 'GRRR×3!!' : 'WOOF!!',
+            style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.w900)),
@@ -599,13 +1033,118 @@ class ScenePainter extends CustomPainter {
     }
   }
 
+  /// Beach reskin of the bench: Uncle Gena, towel, bottle, unbothered.
+  void _towelScene(Canvas c) {
+    final o = _w(World.benchX, 0);
+    final w = World.benchW * _scale;
+    final seatY = o.dy - 3;
+
+    final stripes = [const Color(0xFFCF6679), const Color(0xFFE9E3CE)];
+    final towel = Rect.fromLTWH(o.dx - 6, seatY, w + 20, 12);
+    for (int i = 0; i < 5; i++) {
+      c.drawRect(
+          Rect.fromLTWH(towel.left + i * (towel.width / 5), towel.top,
+              towel.width / 5, towel.height),
+          Paint()..color = stripes[i % 2]);
+    }
+
+    if (g.drunkardChasing) {
+      _genaWithBroom(c);
+    } else {
+      final cx = o.dx + w * 0.3;
+      final skin = Paint()..color = const Color(0xFFE0B48C);
+      final trunks = Paint()..color = const Color(0xFF3E9A5B);
+      c.drawOval(
+          Rect.fromCenter(center: Offset(cx, seatY - 6), width: 46, height: 16),
+          skin);
+      c.drawOval(
+          Rect.fromCenter(
+              center: Offset(cx + 10, seatY - 6), width: 20, height: 14),
+          trunks);
+      final head = Offset(cx - 26, seatY - 10);
+      c.drawCircle(head, 9, skin);
+      c.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromLTWH(head.dx - 8, head.dy - 2, 16, 5),
+              const Radius.circular(2)),
+          Paint()..color = const Color(0xFF2A2830));
+      final arm = Paint()
+        ..color = skin.color
+        ..strokeWidth = 6;
+      c.drawLine(Offset(cx - 14, seatY - 6), Offset(cx - 20, seatY + 2), arm);
+      if (g.drunkardAngry) {
+        final shake = math.sin(g.time * 22) * 3;
+        c.drawLine(Offset(cx + 14, seatY - 8),
+            Offset(cx + 28 + shake, seatY - 26), arm);
+        c.drawCircle(Offset(cx + 30 + shake, seatY - 28), 5, skin);
+        final tp = TextPainter(
+          text: const TextSpan(
+              text: '#@*!',
+              style: TextStyle(
+                  color: Color(0xFFB33A3A),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900)),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        tp.paint(c, Offset(cx + 18, seatY - 50));
+      }
+    }
+
+    // Bottle, same as ever — old habits.
+    final bottleP = Paint()..color = const Color(0xFF3E7A46);
+    if (g.bottleFlying) {
+      final bo = _w(g.bottleFx, g.bottleFy);
+      c.save();
+      c.translate(bo.dx, bo.dy);
+      c.rotate(g.time * 10);
+      c.drawRRect(
+          RRect.fromRectAndRadius(const Rect.fromLTWH(-4, -12, 8, 24),
+              const Radius.circular(3)),
+          bottleP);
+      c.restore();
+    } else {
+      final bo = _w(World.bottleX, 0);
+      c.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromLTWH(bo.dx - 4, bo.dy - World.bottleH * _scale, 8,
+                  World.bottleH * _scale),
+              const Radius.circular(3)),
+          bottleP);
+      c.drawRect(
+          Rect.fromLTWH(bo.dx - 2, bo.dy - World.bottleH * _scale - 5, 4, 6),
+          bottleP);
+    }
+
+    // A parasol — even Uncle Gena has standards.
+    final poleX = o.dx + w + 6;
+    c.drawLine(Offset(poleX, o.dy), Offset(poleX, o.dy - 60),
+        Paint()
+          ..color = const Color(0xFF8B5E34)
+          ..strokeWidth = 3);
+    final canopy = Path()
+      ..moveTo(poleX - 26, o.dy - 56)
+      ..quadraticBezierTo(poleX, o.dy - 72, poleX + 26, o.dy - 56)
+      ..close();
+    c.drawPath(canopy, Paint()..color = const Color(0xFFCF6679));
+  }
+
   void _bench(Canvas c) {
+    if (g.beach) {
+      _towelScene(c);
+      return;
+    }
     final o = _w(World.benchX, 0);
     final w = World.benchW * _scale;
     final seatY = o.dy - 0.45 * _scale;
+    // The nightmare yard's Uncle Gena is, strictly speaking, deceased —
+    // rendered a little translucent and a little green about it.
+    final ghostA = g.nightmare ? 0.6 : 1.0;
+    final ghostTint = g.nightmare ? const Color(0xFF7EA888) : null;
 
     // Bench.
-    final wood = Paint()..color = const Color(0xFF7A5230);
+    final wood = Paint()
+      ..color = (g.nightmare ? const Color(0xFF57525E) : const Color(0xFF7A5230))
+          .withValues(alpha: ghostA);
     c.drawRect(Rect.fromLTWH(o.dx, seatY, w, 6), wood);
     c.drawRect(Rect.fromLTWH(o.dx, seatY - 0.45 * _scale, w, 5), wood); // back
     c.drawRect(Rect.fromLTWH(o.dx + 4, seatY, 5, o.dy - seatY), wood);
@@ -616,8 +1155,10 @@ class ScenePainter extends CustomPainter {
     } else {
       // Uncle Gena, seated.
       final cx = o.dx + w * 0.45;
-      final skin = Paint()..color = const Color(0xFFE0B48C);
-      final coat = Paint()..color = const Color(0xFF6E7B65);
+      final skin =
+          Paint()..color = (ghostTint ?? const Color(0xFFE0B48C)).withValues(alpha: ghostA);
+      final coat =
+          Paint()..color = (ghostTint ?? const Color(0xFF6E7B65)).withValues(alpha: ghostA);
       // Torso (slouched at a physically improbable but spiritually accurate
       // angle).
       c.drawRRect(
@@ -691,11 +1232,22 @@ class ScenePainter extends CustomPainter {
     }
   }
 
-  /// Uncle Gena on the warpath, broom held high.
+  /// Uncle Gena on the warpath, weapon of choice held high (a broom on
+  /// dry land, a flip-flop on the beach, and — in the nightmare yard —
+  /// still a broom, wielded by a gentleman no longer bound by physics).
   void _genaWithBroom(Canvas c) {
     final o = _w(g.drunkardX, 0);
-    final skin = Paint()..color = const Color(0xFFE0B48C);
-    final coat = Paint()..color = const Color(0xFF6E7B65);
+    final ghostA = g.nightmare ? 0.6 : 1.0;
+    final skin = Paint()
+      ..color = (g.nightmare ? const Color(0xFF7EA888) : const Color(0xFFE0B48C))
+          .withValues(alpha: ghostA);
+    final coat = Paint()
+      ..color = (g.nightmare
+              ? const Color(0xFF7EA888)
+              : g.beach
+                  ? const Color(0xFFD8543C)
+                  : const Color(0xFF6E7B65))
+          .withValues(alpha: ghostA);
     final run = math.sin(g.time * 16) * 6;
 
     // Legs, moving with unexpected athleticism.
@@ -709,31 +1261,51 @@ class ScenePainter extends CustomPainter {
         RRect.fromRectAndRadius(Rect.fromLTWH(o.dx - 11, o.dy - 60, 22, 30),
             const Radius.circular(6)),
         coat);
-    // Head + ushanka.
+    // Head + ushanka (sunglasses on the beach; the ushanka is nightmare-proof).
     final head = Offset(o.dx, o.dy - 68);
     c.drawCircle(head, 9, skin);
-    c.drawArc(Rect.fromCircle(center: head, radius: 10.5), math.pi * 0.95,
-        math.pi, true, Paint()..color = const Color(0xFF5A4632));
+    if (g.beach) {
+      final shade = Paint()..color = const Color(0xFF2A2830);
+      c.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromLTWH(head.dx - 8, head.dy - 3, 16, 5),
+              const Radius.circular(2)),
+          shade);
+    } else {
+      c.drawArc(Rect.fromCircle(center: head, radius: 10.5), math.pi * 0.95,
+          math.pi, true, Paint()..color = const Color(0xFF5A4632));
+    }
     c.drawCircle(
         head.translate(-7, 2), 3, Paint()..color = const Color(0xFFD08B6E));
 
-    // Arm raised with the broom of justice.
+    // Arm raised with the weapon of justice.
     final arm = Paint()
       ..color = coat.color
       ..strokeWidth = 6;
     final hand = Offset(o.dx - 16, o.dy - 74 + run * 0.5);
     c.drawLine(Offset(o.dx - 8, o.dy - 54), hand, arm);
-    // Broom: stick + bristles.
-    final stick = Paint()
-      ..color = const Color(0xFF8B5E34)
-      ..strokeWidth = 4;
-    final tip = hand.translate(-20, -14);
-    c.drawLine(hand.translate(10, 8), tip, stick);
-    final bristle = Paint()
-      ..color = const Color(0xFFC9A44C)
-      ..strokeWidth = 2;
-    for (int i = -2; i <= 2; i++) {
-      c.drawLine(tip, tip.translate(-10 + i * 2.0, -12 + i * 3.0), bristle);
+    if (g.beach) {
+      // A flip-flop, brandished with real intent.
+      final sandal = Paint()..color = const Color(0xFF3E9A5B);
+      final tip = hand.translate(-18, -10);
+      c.drawOval(
+          Rect.fromCenter(center: tip, width: 20, height: 10), sandal);
+      c.drawLine(hand.translate(4, 4), tip, Paint()
+        ..color = const Color(0xFF8B5E34)
+        ..strokeWidth = 4);
+    } else {
+      // Broom: stick + bristles.
+      final stick = Paint()
+        ..color = const Color(0xFF8B5E34)
+        ..strokeWidth = 4;
+      final tip = hand.translate(-20, -14);
+      c.drawLine(hand.translate(10, 8), tip, stick);
+      final bristle = Paint()
+        ..color = const Color(0xFFC9A44C)
+        ..strokeWidth = 2;
+      for (int i = -2; i <= 2; i++) {
+        c.drawLine(tip, tip.translate(-10 + i * 2.0, -12 + i * 3.0), bristle);
+      }
     }
 
     final tp = TextPainter(
@@ -769,9 +1341,36 @@ class ScenePainter extends CustomPainter {
         } else {
           _pinAt(c, Offset(o.dx, o.dy - World.pinHeight * _scale / 2), 0,
               depth: p.spec.v);
+          if (g.nightmare) {
+            _pinFlame(c, Offset(o.dx, o.dy - World.pinHeight * _scale));
+          }
         }
       }
     }
+  }
+
+  /// A small flickering flame, for the nightmare yard's ever-burning
+  /// gorodki. Purely cosmetic — extinguishes the instant its pin is hit.
+  void _pinFlame(Canvas c, Offset tip) {
+    final flicker = math.sin(g.time * 18 + tip.dx) * 2;
+    final h = 10 + math.sin(g.time * 11 + tip.dx * 0.7) * 2;
+    final outer = Path()
+      ..moveTo(tip.dx, tip.dy + 2)
+      ..quadraticBezierTo(tip.dx - 5 + flicker, tip.dy - h * 0.5,
+          tip.dx + flicker * 0.5, tip.dy - h)
+      ..quadraticBezierTo(tip.dx + 5 + flicker, tip.dy - h * 0.5, tip.dx, tip.dy + 2)
+      ..close();
+    c.drawPath(outer, Paint()..color = const Color(0xFFE8622E).withValues(alpha: 0.85));
+    final inner = Path()
+      ..moveTo(tip.dx, tip.dy + 1)
+      ..quadraticBezierTo(tip.dx - 2.5 + flicker * 0.6, tip.dy - h * 0.35,
+          tip.dx + flicker * 0.3, tip.dy - h * 0.65)
+      ..quadraticBezierTo(tip.dx + 2.5 + flicker * 0.6, tip.dy - h * 0.35, tip.dx,
+          tip.dy + 1)
+      ..close();
+    c.drawPath(inner, Paint()..color = const Color(0xFFFFD873));
+    c.drawCircle(Offset(tip.dx, tip.dy - h * 0.4), 2.5,
+        Paint()..color = const Color(0x33FF8A3C));
   }
 
   /// Draws a pin centered at [center], rotated by [angle].
@@ -844,8 +1443,14 @@ class ScenePainter extends CustomPainter {
     if (px < -1.5) return; // fully fled
     final o = _w(px, 0);
     final skin = Paint()..color = const Color(0xFFE0B48C);
-    final shirt = Paint()..color = const Color(0xFF3B6EA5);
-    final pants = Paint()..color = const Color(0xFF444B54);
+    final shirt = Paint()
+      ..color = g.nightmare
+          ? const Color(0xFF17151C)
+          : (g.beach ? const Color(0xFF2FA0A8) : const Color(0xFF3B6EA5));
+    final pants = Paint()
+      ..color = g.nightmare
+          ? const Color(0xFF0E0D12)
+          : (g.beach ? const Color(0xFFE8543C) : const Color(0xFF444B54));
 
     // Special poses after the bat's unscheduled return.
     if (g.playerBonked) {
@@ -933,6 +1538,46 @@ class ScenePainter extends CustomPainter {
           Paint()..color = const Color(0xFF2E5D96));
       c.drawCircle(head.translate(0, -12), 4,
           Paint()..color = const Color(0xFFF3F8FC));
+    } else if (g.nightmare) {
+      // A cape, flowing out from behind the shoulders (drawn wide so it
+      // reads past the torso already painted above)...
+      final cape = Path()
+        ..moveTo(o.dx - 9, o.dy - 58)
+        ..lineTo(o.dx - 17, o.dy - 4)
+        ..lineTo(o.dx - 3, o.dy - 18)
+        ..lineTo(o.dx + 3, o.dy - 18)
+        ..lineTo(o.dx + 17, o.dy - 4)
+        ..lineTo(o.dx + 9, o.dy - 58)
+        ..close();
+      c.drawPath(cape, Paint()..color = const Color(0xFF0C0B10));
+      // ...and a sealed black helmet, with the iconic breathing grille.
+      c.drawCircle(head, 10, Paint()..color = const Color(0xFF15131A));
+      c.drawArc(Rect.fromCircle(center: head.translate(0, -2), radius: 10.2),
+          math.pi * 1.1,
+          math.pi * 0.8,
+          false,
+          Paint()
+            ..color = const Color(0xFF3A3742)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.4);
+      final grille = Paint()..color = const Color(0xFF3A3742);
+      for (int i = -1; i <= 1; i++) {
+        c.drawRect(Rect.fromLTWH(head.dx - 3 + i * 3.0, head.dy + 2, 2, 5),
+            grille);
+      }
+      c.drawCircle(
+          head.translate(0, -3),
+          1.4,
+          Paint()
+            ..color = Color.fromRGBO(255, 40, 30, 0.6 + 0.3 * math.sin(g.time * 4)));
+    } else if (g.beach) {
+      // Head + sunglasses. No cap needed — the sun is a friend here.
+      c.drawCircle(head, 9, skin);
+      c.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromLTWH(head.dx - 8, head.dy - 3, 16, 5),
+              const Radius.circular(2)),
+          Paint()..color = const Color(0xFF2A2830));
     } else {
       // Head + flat cap (kepka).
       c.drawCircle(head, 9, skin);
@@ -952,6 +1597,14 @@ class ScenePainter extends CustomPainter {
         c.drawCircle(head.translate(-4, -7), 2.6, mush2);
         c.drawCircle(head.translate(5, -6), 2.2, mush2);
         c.drawCircle(head.translate(2, -13), 1.8, mush2);
+      } else if (g.nightmare) {
+        // Ectoplasm. Distinctly non-negotiable.
+        final goo = Paint()..color = const Color(0xFF5FA86A);
+        final goo2 = Paint()..color = const Color(0xFF8FCF9A);
+        c.drawCircle(head.translate(1, -10), 5, goo);
+        c.drawCircle(head.translate(-4, -7), 2.6, goo2);
+        c.drawCircle(head.translate(5, -6), 2.2, goo2);
+        c.drawCircle(head.translate(2, -13), 1.8, goo2);
       } else {
         final splat = Paint()..color = const Color(0xFFF5F2E8);
         c.drawCircle(head.translate(2, -9), 4, splat);
@@ -1118,11 +1771,41 @@ class ScenePainter extends CustomPainter {
       c.restore();
       return;
     }
+    if (g.nightmare) {
+      // The raven: same silhouette as the crow, one shade darker, with a
+      // distinctly unnatural red eye.
+      c.save();
+      c.translate(o.dx, o.dy);
+      if (g.pigeon.vx > 0.1) c.scale(-1, 1);
+      final dark = Paint()..color = const Color(0xFF0E0C10);
+      final flap = math.sin(g.time * 15) * 6;
+      for (final side in [-1.0, 1.0]) {
+        final wing = Path()
+          ..moveTo(0, 0)
+          ..quadraticBezierTo(
+              side * 10, -4 - flap * side.sign, side * 16, 1 - flap * 0.4)
+          ..quadraticBezierTo(side * 10, 3, 0, 2)
+          ..close();
+        c.drawPath(wing, dark);
+      }
+      c.drawOval(
+          Rect.fromCenter(center: Offset.zero, width: 14, height: 10), dark);
+      c.drawCircle(const Offset(-9, -2), 4, dark);
+      c.drawCircle(const Offset(-11, -3), 1.4, Paint()..color = const Color(0xFFFF3B30));
+      final beak = Path()
+        ..moveTo(-12, -2)
+        ..lineTo(-17, -1)
+        ..lineTo(-12, 1)
+        ..close();
+      c.drawPath(beak, Paint()..color = const Color(0xFF5A5460));
+      c.restore();
+      return;
+    }
     c.save();
     c.translate(o.dx, o.dy);
     // Always fly beak-first: mirror the sprite when moving right.
     if (g.pigeon.vx > 0.1) c.scale(-1, 1);
-    final body = Paint()..color = const Color(0xFF8E9AA8);
+    final body = Paint()..color = g.beach ? const Color(0xFFF2F2EE) : const Color(0xFF8E9AA8);
     c.drawOval(
         Rect.fromCenter(center: Offset.zero, width: 22, height: 13), body);
     c.drawCircle(const Offset(-10, -4), 5, body);
@@ -1155,8 +1838,13 @@ class ScenePainter extends CustomPainter {
     final up = math.min(1.0, g.moleT / 0.9) *
         math.min(1.0, math.max(0.0, (2.8 - g.moleT)) / 0.5);
 
-    // Dirt mound.
-    final mound = Paint()..color = const Color(0xFF5E4326);
+    // Dirt mound (sand on the beach, scorched earth in the nightmare yard).
+    final mound = Paint()
+      ..color = g.beach
+          ? const Color(0xFFD8C48A)
+          : g.nightmare
+              ? const Color(0xFF2E2A24)
+              : const Color(0xFF5E4326);
     c.drawOval(
         Rect.fromCenter(
             center: Offset(o.dx, o.dy - 2),
@@ -1174,8 +1862,14 @@ class ScenePainter extends CustomPainter {
           crumb);
     }
 
-    // The mole itself.
-    final body = Paint()..color = const Color(0xFF4A3B4F);
+    // The mole itself (a crab claw on the beach, a bony hand in the
+    // nightmare yard — same rig, different occupant).
+    final body = Paint()
+      ..color = g.beach
+          ? const Color(0xFFC98A4B)
+          : g.nightmare
+              ? const Color(0xFF8C8478)
+              : const Color(0xFF4A3B4F);
     final rise = 0.34 * k * up;
     final head = Offset(o.dx, o.dy - 4 - rise);
     c.drawOval(

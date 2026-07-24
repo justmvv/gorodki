@@ -78,6 +78,45 @@ asleep for the season, but new locals have opinions:
   of snow slides off a roof and buries the player up to the neck.
   It's an instant level loss — level 3 restarts from figure 1.
 
+## Level 4: the nightmare yard 🌕
+
+Clear level 3 and a blood moon rises — the same yard, now half horror movie,
+half something worse. It's brutal: **wind derails 80% of throws**, the
+gorodki themselves burn with an ever-present flame, and the courtyard cast
+has been replaced with their afterlife counterparts:
+
+* **The grave portal** — stands where the kennel used to be. Hit it and
+  Cerberus climbs out, all three heads barking, to escort you off the
+  premises.
+* **The ghost of Uncle Gena** — translucent, faintly green, and still
+  fiercely protective of his bottle. Push your luck and he still grabs the
+  broom.
+* **Rusty chains** — hang where the laundry line was; get caught and your
+  bat swings ominously while something giggles nearby.
+* **A raven** — replaces the pigeon, with a distinctly supernatural
+  opinion of napping players.
+* **A haunted window** — crash into it and a pale face appears to complain
+  about property values.
+
+Your own outfit gets an upgrade too, for reasons the yard does not explain.
+
+## Level 5: gorodki on vacation 🏖️
+
+Clear level 4 and dawn breaks over golden sand — the courtyard swaps for a
+beach, complete with sea, a volleyball net, and Uncle Gena (very much
+alive, working on his tan). It's the hardest round in a different way:
+**the sea breeze catches 100% of throws**, no exceptions. New hazards:
+
+* **A sandcastle guarded by a crab** — hit it and an outraged crustacean
+  pinches its way out and chases you down the beach.
+* **Uncle Gena, towel edition** — same guy, same bottle, same threshold
+  for patience — except now he chases you with a flip-flop.
+* **The volleyball net** — strung where the laundry line was; get tangled
+  and somewhere a beach team is down a player.
+* **A seagull** — replaces the pigeon. It has clearly done this before.
+* **A rogue beach ball** — occasionally rolls straight through the gorod
+  and scatters your figure. Someone yells "SORRY!" from far away.
+
 ## Languages 🌍
 
 English, Deutsch, Español, Nederlands. The app picks the language from

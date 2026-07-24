@@ -142,6 +142,12 @@ class GameController extends ChangeNotifier {
   int level = 1;
   bool get evening => level == 2;
   bool get winter => level == 3;
+  bool get nightmare => level == 4;
+  bool get beach => level == 5;
+
+  /// True for levels that reuse the level-1 hazard set (kennel/dog,
+  /// bench/bottle, laundry rope) under a different skin.
+  bool get level1Style => level == 1 || nightmare || beach;
 
   // ---- Level 3: the winter yard ---------------------------------------
   int snowmanStage = 0; // 0 = pristine ... 3 = humble stump
@@ -323,12 +329,15 @@ class GameController extends ChangeNotifier {
     _webChecked = false;
     _iceSaid = false;
 
-    // Wind: 20% of evening throws, a brutal 40% of winter ones.
-    final windChance = winter ? 0.4 : (evening ? 0.2 : 0.1);
+    // Wind: 10% on the daytime yard, 20% in the evening, a brutal 40% in
+    // winter, a nightmarish 80% in the nightmare yard, and a merciless
+    // 100% sea breeze on the beach — nobody escapes level 5 unaimed.
+    final windChance =
+        beach ? 1.0 : (nightmare ? 0.8 : (winter ? 0.4 : (evening ? 0.2 : 0.1)));
     if (windChance > 0 && _rng.nextDouble() < windChance) {
       aimVx *= 0.65 + _rng.nextDouble() * 0.7;
       aimVy *= 0.7 + _rng.nextDouble() * 0.6;
-      _say('💨', L10n.t.windGust, ttl: 2.5);
+      _say('💨', beach ? L10n.t.seaBreeze : L10n.t.windGust, ttl: 2.5);
     }
 
     // Level 3: a kid on a sled may cross the yard.
@@ -714,8 +723,8 @@ class GameController extends ChangeNotifier {
       }
     }
 
-    // --- Laundry line (level 1) ----------------------------------------
-    if (level == 1 &&
+    // --- Laundry line / chains / volleyball net --------------------------
+    if (level1Style &&
         !_ropeChecked &&
         bat.x > World.ropeX1 &&
         bat.x < World.ropeX2 &&
@@ -730,13 +739,14 @@ class GameController extends ChangeNotifier {
           ..vy = 0;
         _throwHadContact = true;
         _sfx('boing');
-        _say('🩲', L10n.t.ropeSnag);
+        _say(nightmare ? '⛓️' : (beach ? '🏐' : '🩲'),
+            nightmare ? L10n.t.chainSnag : (beach ? L10n.t.netSnag : L10n.t.ropeSnag));
         return;
       }
     }
 
-    // --- Dog kennel (level 1) -------------------------------------------
-    if (level == 1 &&
+    // --- Dog kennel / grave portal / sandcastle ---------------------------
+    if (level1Style &&
         bat.x > World.kennelX &&
         bat.x < World.kennelX + World.kennelW &&
         bat.y < World.kennelH) {
@@ -753,15 +763,15 @@ class GameController extends ChangeNotifier {
       _hitPinsAt(bat.x);
     }
 
-    // --- The bottle (and its owner, level 1) -----------------------------
-    if (level == 1 &&
+    // --- The bottle (and its owner) ---------------------------------------
+    if (level1Style &&
         !bottleFlying &&
         (bat.x - World.bottleX).abs() < World.bottleR + 0.25 &&
         bat.y < World.bottleH + 0.2) {
       _hitBottle();
     }
 
-    // --- Right building / the window -------------------------------------
+    // --- Right building / the window (or its stand-ins) -------------------
     if (bat.x >= World.buildingRX) {
       _throwHadContact = true;
       if (bat.y > World.windowY1 && bat.y < World.windowY2) {
@@ -769,14 +779,18 @@ class GameController extends ChangeNotifier {
           windowBroken = true;
           throwsTotal++; // penalty throw
           _sfx('glass');
-          _say('🪟', L10n.t.windowCrash);
+          _say('🪟', nightmare
+              ? L10n.t.nightmareWindowCrash
+              : (beach ? L10n.t.beachKioskCrash : L10n.t.windowCrash));
         } else {
           _sfx('knock');
-          _say('🪟', L10n.t.windowAgain);
+          _say('🪟', nightmare
+              ? L10n.t.nightmareWindowAgain
+              : (beach ? L10n.t.beachKioskAgain : L10n.t.windowAgain));
         }
       } else {
         _sfx('knock');
-        _say('🧱', L10n.t.buildingThud);
+        _say('🧱', beach ? L10n.t.beachThud : L10n.t.buildingThud);
       }
       bat.x = World.buildingRX - 0.1;
       bat.vx = -1.5;
@@ -1027,12 +1041,18 @@ class GameController extends ChangeNotifier {
       ..y = 7.5
       ..vx = 0
       ..vy = 0;
-    _sfx(evening ? 'drone' : (winter ? 'caw' : 'coo'));
+    _sfx(evening ? 'drone' : ((winter || nightmare) ? 'caw' : 'coo'));
     _say(
-        evening ? '🦇' : (winter ? '🐦‍⬛' : '🕊️'),
+        evening ? '🦇' : ((winter || nightmare) ? '🐦‍⬛' : '🕊️'),
         evening
             ? L10n.t.batImpatient
-            : (winter ? L10n.t.crowImpatient : L10n.t.pigeonImpatient));
+            : winter
+                ? L10n.t.crowImpatient
+                : nightmare
+                    ? L10n.t.ravenImpatient
+                    : beach
+                        ? L10n.t.seagullImpatient
+                        : L10n.t.pigeonImpatient);
   }
 
   /// Erratic bat-style flutter velocity aimed roughly at ([tx],[ty]),
@@ -1112,7 +1132,16 @@ class GameController extends ChangeNotifier {
             ..vx = 3.0
             ..vy = 2.5;
           _sfx('splash');
-          _say('💩', winter ? L10n.t.crowHit : L10n.t.pigeonHit, ttl: 4.2);
+          _say(
+              '💩',
+              winter
+                  ? L10n.t.crowHit
+                  : nightmare
+                      ? L10n.t.ravenHit
+                      : beach
+                          ? L10n.t.seagullHit
+                          : L10n.t.pigeonHit,
+              ttl: 4.2);
         } else {
           // Keep velocity on the bird so the sprite faces its dive
           // direction (down one stroke of the V, up the other).
@@ -1163,7 +1192,8 @@ class GameController extends ChangeNotifier {
     bat.active = false;
     throwsTotal++; // penalty throw
     _sfx('whoosh');
-    _say('🧹', L10n.t.broomChase, ttl: 5);
+    _say(beach ? '🩴' : '🧹', beach ? L10n.t.flipFlopChase : L10n.t.broomChase,
+        ttl: 5);
   }
 
   void _tickBroomChase(double dt) {
@@ -1200,7 +1230,12 @@ class GameController extends ChangeNotifier {
     _eventT = 0;
     throwsTotal++; // penalty throw
     _sfx('bark');
-    _say('🐕', L10n.t.dogChase, ttl: 4.5);
+    _say(
+        nightmare ? '💀' : (beach ? '🦀' : '🐕'),
+        nightmare
+            ? L10n.t.portalMsg
+            : (beach ? L10n.t.crabChaseMsg : L10n.t.dogChase),
+        ttl: 4.5);
   }
 
   void _tickDogChase(double dt) {
@@ -1331,6 +1366,49 @@ class GameController extends ChangeNotifier {
         _setupFigure();
         _sfx('fanfare');
         _say('🌨️', L10n.t.level3Intro, ttl: 6);
+        _startPreview();
+        return;
+      }
+      if (level == 3) {
+        // A blood moon rises over the yard — level 4 begins.
+        level = 4;
+        figureIndex = 0;
+        manholeManUp = false;
+        lampBroken = false;
+        lampBroken2 = false;
+        spiderWeaving = false;
+        webActive = false;
+        webAlpha = 0;
+        playerBuried = false;
+        snowmanStage = 0;
+        sledActive = false;
+        sledHasBat = false;
+        drone.active = false;
+        pigeon.active = false;
+        dogOut = false;
+        drunkardChasing = false;
+        bottleHits = 0;
+        _broomThreshold = 3 + _rng.nextInt(4);
+        _setupFigure();
+        _sfx('fanfare');
+        _say('🌕', L10n.t.level4Intro, ttl: 6);
+        _startPreview();
+        return;
+      }
+      if (level == 4) {
+        // Dawn breaks, and mercifully, over golden sand — level 5 begins.
+        level = 5;
+        figureIndex = 0;
+        dogOut = false;
+        drunkardChasing = false;
+        bottleHits = 0;
+        _broomThreshold = 3 + _rng.nextInt(4);
+        pigeon.active = false;
+        drone.active = false;
+        moleOut = false;
+        _setupFigure();
+        _sfx('fanfare');
+        _say('🏖️', L10n.t.level5Intro, ttl: 6);
         _startPreview();
         return;
       }
@@ -1524,7 +1602,12 @@ class GameController extends ChangeNotifier {
           ..toppled = true;
       }
       _sfx('knock');
-      _say('🐹', L10n.t.moleMsg, ttl: 4.5);
+      _say(
+          nightmare ? '💀' : (beach ? '🦀' : '🐹'),
+          nightmare
+              ? L10n.t.moleMsgNightmare
+              : (beach ? L10n.t.moleMsgBeach : L10n.t.moleMsg),
+          ttl: 4.5);
     }
     if (_eventT > 2.8) {
       moleOut = false;

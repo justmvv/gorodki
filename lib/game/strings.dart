@@ -65,7 +65,28 @@ class GameStrings {
       crowHit,
       treeHit,
       iceSlide,
-      sledKid;
+      sledKid,
+      level4Intro,
+      level5Intro,
+      level4Name,
+      level5Name,
+      seaBreeze,
+      portalMsg,
+      crabChaseMsg,
+      flipFlopChase,
+      chainSnag,
+      netSnag,
+      nightmareWindowCrash,
+      nightmareWindowAgain,
+      beachKioskCrash,
+      beachKioskAgain,
+      beachThud,
+      ravenImpatient,
+      ravenHit,
+      seagullImpatient,
+      seagullHit,
+      moleMsgNightmare,
+      moleMsgBeach;
   final List<String> missLines, bottleLines, snowmanLines;
 
   const GameStrings({
@@ -131,6 +152,27 @@ class GameStrings {
     required this.treeHit,
     required this.iceSlide,
     required this.sledKid,
+    required this.level4Intro,
+    required this.level5Intro,
+    required this.level4Name,
+    required this.level5Name,
+    required this.seaBreeze,
+    required this.portalMsg,
+    required this.crabChaseMsg,
+    required this.flipFlopChase,
+    required this.chainSnag,
+    required this.netSnag,
+    required this.nightmareWindowCrash,
+    required this.nightmareWindowAgain,
+    required this.beachKioskCrash,
+    required this.beachKioskAgain,
+    required this.beachThud,
+    required this.ravenImpatient,
+    required this.ravenHit,
+    required this.seagullImpatient,
+    required this.seagullHit,
+    required this.moleMsgNightmare,
+    required this.moleMsgBeach,
     required this.missLines,
     required this.bottleLines,
     required this.snowmanLines,
@@ -230,6 +272,42 @@ const en = GameStrings(
   iceSlide: 'The frozen puddle! The bat glides like it never learned to stop.',
   sledKid:
       'A kid on a sled zooms by and carries your bat away. "MIIINE!"',
+  level4Intro:
+      'A blood moon rises... Level 4: Gorodki in a Nightmare! The pins are on fire, the wind is a brutal 80%, and something is watching from the portal.',
+  level5Intro:
+      'Dawn breaks over the sand... Level 5: Gorodki on Vacation! The sea breeze catches every throw (100%!), and Uncle Gena is already working on his tan.',
+  level4Name: 'Level 4 — Nightmare yard',
+  level5Name: 'Level 5 — Beach yard',
+  seaBreeze: 'A sea breeze off the water! The bat drifts wherever it pleases.',
+  portalMsg:
+      'You hit the grave! Cerberus climbs out of the portal and escorts you off the premises, all three heads barking. (+1 penalty throw)',
+  crabChaseMsg:
+      'You hit the sandcastle! An outraged crab pinches its way out and chases you off the beach. (+1 penalty throw)',
+  flipFlopChase:
+      'That was the LAST one! Uncle Gena grabs his flip-flop and chases you off the beach! (+1 penalty throw)',
+  chainSnag:
+      'Your bat is now hanging from a rusty chain, swinging ominously. Something giggles nearby.',
+  netSnag:
+      'Tangled in the volleyball net! Somewhere, a beach team is now down a player.',
+  nightmareWindowCrash:
+      'CRASH! A pale face appears in the shattered window and moans about property values. (+1 penalty throw)',
+  nightmareWindowAgain: 'That window was already haunted. Now it just echoes.',
+  beachKioskCrash:
+      'CRASH! You\'ve hit the ice-cream kiosk. The vendor is unimpressed and charges you for a cone anyway. (+1 penalty throw)',
+  beachKioskAgain: 'The kiosk window was already cracked. The vendor shrugs.',
+  beachThud: 'THUD. A sand dune absorbs the impact with total indifference.',
+  ravenImpatient:
+      'The raven perches nearby, one red eye fixed on your nap with growing interest...',
+  ravenHit:
+      'SPLAT! The raven delivers a distinctly supernatural verdict on your napping. You run off to wash up.',
+  seagullImpatient:
+      'The seagull is circling. It has clearly done this before...',
+  seagullHit:
+      'SPLAT! The seagull claims victory (and your sandwich). You run off to wash up.',
+  moleMsgNightmare:
+      'A bony hand bursts from the grave and redecorates your figure with theatrical malice.',
+  moleMsgBeach:
+      'A rogue beach ball rolls straight through the gorod, scattering your figure. Someone yells "SORRY!" from far away.',
   snowmanLines: [
     'The snowman lost his bucket. He is above such things.',
     'The snowman is now a third shorter. The carrot remains optimistic.',
@@ -340,6 +418,41 @@ const de = GameStrings(
   iceSlide: 'Die gefrorene Pfütze! Das Holz gleitet, als hätte es Bremsen nie gelernt.',
   sledKid:
       'Ein Kind auf dem Schlitten saust vorbei und nimmt dein Schlagholz mit. "MEINS!"',
+  level4Intro:
+      'Ein Blutmond geht auf... Level 4: Städtchen im Albtraum! Die Kegel brennen, der Wind liegt bei brutalen 80%, und etwas beobachtet dich aus dem Portal.',
+  level5Intro:
+      'Die Sonne geht über dem Sand auf... Level 5: Städtchen im Urlaub! Die Meeresbrise erwischt jeden Wurf (100%!), und Onkel Gena arbeitet schon an seiner Bräune.',
+  level4Name: 'Level 4 — Albtraumhof',
+  level5Name: 'Level 5 — Strandhof',
+  seaBreeze: 'Eine Meeresbrise vom Wasser! Das Schlagholz treibt, wohin es will.',
+  portalMsg:
+      'Du hast das Grab getroffen! Cerberus klettert aus dem Portal und begleitet dich vom Hof, alle drei Köpfe bellend. (+1 Strafwurf)',
+  crabChaseMsg:
+      'Du hast die Sandburg getroffen! Eine empörte Krabbe kneift sich heraus und jagt dich vom Strand. (+1 Strafwurf)',
+  flipFlopChase:
+      'Das war die LETZTE! Onkel Gena greift zur Flip-Flop und jagt dich vom Strand! (+1 Strafwurf)',
+  chainSnag:
+      'Dein Schlagholz hängt jetzt an einer rostigen Kette und schwingt unheilvoll. Irgendwo kichert etwas.',
+  netSnag:
+      'Im Volleyballnetz verheddert! Irgendwo hat ein Strandteam jetzt einen Spieler weniger.',
+  nightmareWindowCrash:
+      'KRACH! Ein blasses Gesicht erscheint im zerbrochenen Fenster und jammert über die Grundstückspreise. (+1 Strafwurf)',
+  nightmareWindowAgain: 'Das Fenster war schon verflucht. Jetzt hallt es nur noch.',
+  beachKioskCrash:
+      'KRACH! Du hast den Eiskiosk getroffen. Der Verkäufer ist unbeeindruckt und berechnet dir trotzdem eine Kugel. (+1 Strafwurf)',
+  beachKioskAgain: 'Das Kioskfenster war schon gesprungen. Der Verkäufer zuckt mit den Schultern.',
+  beachThud: 'RUMMS. Eine Sanddüne schluckt den Aufprall mit völliger Gleichgültigkeit.',
+  ravenImpatient:
+      'Der Rabe sitzt in der Nähe, ein rotes Auge fest auf dein Nickerchen gerichtet...',
+  ravenHit:
+      'PATSCH! Der Rabe fällt ein deutlich übernatürliches Urteil über dein Nickerchen. Ab zum Waschen.',
+  seagullImpatient: 'Die Möwe kreist. Das hat sie eindeutig schon öfter gemacht...',
+  seagullHit:
+      'PATSCH! Die Möwe beansprucht den Sieg (und dein Sandwich). Ab zum Waschen.',
+  moleMsgNightmare:
+      'Eine knochige Hand bricht aus dem Grab hervor und dekoriert deine Figur mit theatralischer Bosheit um.',
+  moleMsgBeach:
+      'Ein entlaufener Wasserball rollt mitten durch den Gorod und wirft deine Figur um. Jemand ruft von weitem "SORRY!".',
   snowmanLines: [
     'Der Schneemann hat seinen Eimer verloren. Er steht über solchen Dingen.',
     'Der Schneemann ist jetzt ein Drittel kürzer. Die Karotte bleibt optimistisch.',
@@ -451,6 +564,41 @@ const es = GameStrings(
       '¡El charco helado! El bate se desliza como si nunca hubiera aprendido a frenar.',
   sledKid:
       'Un niño en trineo pasa zumbando y se lleva tu bate. "¡¡MÍO!!"',
+  level4Intro:
+      'Sale una luna de sangre... ¡Nivel 4: Gorodki en una Pesadilla! Los bolos están en llamas, el viento sopla al 80% brutal, y algo observa desde el portal.',
+  level5Intro:
+      'Amanece sobre la arena... ¡Nivel 5: Gorodki de Vacaciones! La brisa marina atrapa cada lanzamiento (¡100%!), y el tío Gena ya está trabajando en su bronceado.',
+  level4Name: 'Nivel 4 — Patio de pesadilla',
+  level5Name: 'Nivel 5 — Patio de playa',
+  seaBreeze: '¡Una brisa marina desde el agua! El bate flota a su antojo.',
+  portalMsg:
+      '¡Has golpeado la tumba! Cerbero sale del portal y te escolta fuera del patio, ladrando con sus tres cabezas. (+1 lanzamiento de penalización)',
+  crabChaseMsg:
+      '¡Has golpeado el castillo de arena! Un cangrejo indignado sale a pellizcos y te persigue fuera de la playa. (+1 lanzamiento de penalización)',
+  flipFlopChase:
+      '¡Esa fue la ÚLTIMA! El tío Gena agarra su chancla y te persigue fuera de la playa! (+1 lanzamiento de penalización)',
+  chainSnag:
+      'Tu bate cuelga ahora de una cadena oxidada, balanceándose de forma inquietante. Algo se ríe por ahí cerca.',
+  netSnag:
+      '¡Enredado en la red de vóley playa! En algún lugar, un equipo de playa se ha quedado sin un jugador.',
+  nightmareWindowCrash:
+      '¡CRASH! Un rostro pálido aparece en la ventana rota y se lamenta del valor de la propiedad. (+1 lanzamiento de penalización)',
+  nightmareWindowAgain: 'Esa ventana ya estaba embrujada. Ahora solo hace eco.',
+  beachKioskCrash:
+      '¡CRASH! Has golpeado el quiosco de helados. Al vendedor no le impresiona y te cobra un cono de todos modos. (+1 lanzamiento de penalización)',
+  beachKioskAgain: 'La ventana del quiosco ya estaba agrietada. El vendedor se encoge de hombros.',
+  beachThud: 'PLOF. Una duna de arena absorbe el impacto con total indiferencia.',
+  ravenImpatient:
+      'El cuervo se posa cerca, con un ojo rojo fijo en tu siesta con creciente interés...',
+  ravenHit:
+      '¡SPLAT! El cuervo emite un veredicto claramente sobrenatural sobre tu siesta. Corres a lavarte.',
+  seagullImpatient: 'La gaviota está sobrevolando. Claramente ya ha hecho esto antes...',
+  seagullHit:
+      '¡SPLAT! La gaviota reclama la victoria (y tu bocadillo). Corres a lavarte.',
+  moleMsgNightmare:
+      'Una mano huesuda sale de la tumba y redecora tu figura con malicia teatral.',
+  moleMsgBeach:
+      'Una pelota de playa fuera de control rueda directamente por el gorod, dispersando tu figura. Alguien grita "¡PERDÓN!" desde lejos.',
   snowmanLines: [
     'El muñeco de nieve perdió su cubo. Está por encima de esas cosas.',
     'El muñeco de nieve es ahora un tercio más bajo. La zanahoria sigue optimista.',
@@ -561,6 +709,41 @@ const nl = GameStrings(
   iceSlide: 'De bevroren plas! De knuppel glijdt alsof hij nooit heeft leren remmen.',
   sledKid:
       'Een kind op een slee zoeft voorbij en neemt je knuppel mee. "VAN MIJ!"',
+  level4Intro:
+      'Er komt een bloedmaan op... Level 4: Gorodki in een Nachtmerrie! De pinnen staan in brand, de wind zit op een brute 80%, en iets houdt je in de gaten vanuit het portaal.',
+  level5Intro:
+      'De zon komt op boven het zand... Level 5: Gorodki op Vakantie! Het zeebriesje grijpt elke worp (100%!), en oom Gena werkt al aan zijn bruintje.',
+  level4Name: 'Level 4 — Nachtmerrietuin',
+  level5Name: 'Level 5 — Strandtuin',
+  seaBreeze: 'Een zeebriesje vanaf het water! De knuppel drijft waarheen het wil.',
+  portalMsg:
+      'Je raakte het graf! Cerberus klimt uit het portaal en begeleidt je van het terrein, alle drie de koppen blaffend. (+1 strafworp)',
+  crabChaseMsg:
+      'Je raakte het zandkasteel! Een verontwaardigde krab knijpt zich naar buiten en jaagt je van het strand. (+1 strafworp)',
+  flipFlopChase:
+      'Dat was de LAATSTE! Oom Gena grijpt zijn slipper en jaagt je van het strand! (+1 strafworp)',
+  chainSnag:
+      'Je knuppel hangt nu aan een roestige ketting, onheilspellend zwaaiend. Er giechelt iets in de buurt.',
+  netSnag:
+      'Verstrikt in het volleybalnet! Ergens heeft een strandteam nu een speler te weinig.',
+  nightmareWindowCrash:
+      'KRAK! Een bleek gezicht verschijnt in het gebroken raam en klaagt over de huizenprijzen. (+1 strafworp)',
+  nightmareWindowAgain: 'Dat raam was al behekst. Nu galmt het alleen maar.',
+  beachKioskCrash:
+      'KRAK! Je raakte de ijskraam. De verkoper is onder de indruk noch ontroerd en rekent je toch een bolletje aan. (+1 strafworp)',
+  beachKioskAgain: 'Het raam van de kraam was al gebarsten. De verkoper haalt zijn schouders op.',
+  beachThud: 'BOF. Een zandduin absorbeert de klap met volslagen onverschilligheid.',
+  ravenImpatient:
+      'De raaf zit vlakbij, één rood oog strak op je dutje gericht, met groeiende interesse...',
+  ravenHit:
+      'SPLAT! De raaf velt een uitgesproken bovennatuurlijk oordeel over je dutje. Je rent weg om je te wassen.',
+  seagullImpatient: 'De meeuw cirkelt rond. Ze heeft dit duidelijk al vaker gedaan...',
+  seagullHit:
+      'SPLAT! De meeuw claimt de overwinning (en je boterham). Je rent weg om je te wassen.',
+  moleMsgNightmare:
+      'Een benige hand breekt uit het graf en herdecoreert je figuur met theatrale kwaadaardigheid.',
+  moleMsgBeach:
+      'Een losgeslagen strandbal rolt recht door de gorod en gooit je figuur omver. Iemand roept van veraf "SORRY!".',
   snowmanLines: [
     'De sneeuwpop is zijn emmer kwijt. Hij staat boven zulke dingen.',
     'De sneeuwpop is nu een derde korter. De wortel blijft optimistisch.',
