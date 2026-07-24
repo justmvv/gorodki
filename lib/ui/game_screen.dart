@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -152,6 +154,7 @@ class _GameScreenState extends State<GameScreen>
                 ),
               ),
               _buildHud(),
+              if (game.levelTitleT > 0) _buildLevelTitle(),
               ..._buildMessages(),
               if (game.phase == Phase.gameOver) _buildGameOver(),
             ],
@@ -199,6 +202,49 @@ class _GameScreenState extends State<GameScreen>
           const SizedBox(width: 6),
           _languageButton(),
         ],
+      ),
+    );
+  }
+
+  /// Soft, blinking level-name title shown for the first 10s of each
+  /// level — a light, understated text overlay, no box or background.
+  Widget _buildLevelTitle() {
+    final t = game.levelTitleT;
+    final names = [
+      L10n.t.level1Name,
+      L10n.t.level2Name,
+      L10n.t.level3Name,
+      L10n.t.level4Name,
+      L10n.t.level5Name,
+    ];
+    final name = names[(game.level - 1).clamp(0, names.length - 1)];
+    // Gentle continuous blink, fading out over the last 1.5s.
+    final blink = 0.45 + 0.45 * math.sin(game.time * 3.2);
+    final fadeOut = t < 1.5 ? (t / 1.5).clamp(0.0, 1.0) : 1.0;
+    return Positioned(
+      top: 90,
+      left: 0,
+      right: 0,
+      child: IgnorePointer(
+        child: Center(
+          child: Opacity(
+            opacity: blink * fadeOut,
+            child: Text(
+              name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFF5F3E8),
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.4,
+                shadows: [
+                  Shadow(blurRadius: 12, color: Colors.black87),
+                  Shadow(blurRadius: 3, color: Colors.black54),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

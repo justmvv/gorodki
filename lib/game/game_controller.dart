@@ -256,6 +256,10 @@ class GameController extends ChangeNotifier {
   bool _throwHadContact = false; // did the bat hit anything at all
   double time = 0; // global clock for idle animations
 
+  /// Counts down from 10s whenever a level starts, driving the blinking
+  /// level-name title in the UI. 0 (or below) means it's not shown.
+  double levelTitleT = 0;
+
   /// Sound hook — set by the UI layer (see AudioManager). Keeps the game
   /// logic free of any audio-plugin dependency.
   void Function(String name)? onSound;
@@ -312,6 +316,7 @@ class GameController extends ChangeNotifier {
     throwsTotal = 0;
     _levelStartThrows = 0;
     levelThrowCounts = List.filled(5, 0);
+    levelTitleT = 10;
     windowBroken = false;
     bottleHits = 0;
     carHits = 0;
@@ -512,6 +517,7 @@ class GameController extends ChangeNotifier {
     if (dt <= 0) return;
     dt = math.min(dt, 1 / 20); // avoid tunneling after app pauses
     time += dt;
+    if (levelTitleT > 0) levelTitleT -= dt;
 
     for (final m in messages) {
       m.ttl -= dt;
@@ -1698,6 +1704,7 @@ class GameController extends ChangeNotifier {
         level = 2;
         figureIndex = 0;
         _levelStartThrows = throwsTotal;
+        levelTitleT = 10;
         carHits = 0;
         alarmT = 0;
         ownerWindowT = 0;
@@ -1723,6 +1730,7 @@ class GameController extends ChangeNotifier {
         level = 3;
         figureIndex = 0;
         _levelStartThrows = throwsTotal;
+        levelTitleT = 10;
         snowmanStage = 0;
         sledActive = false;
         manholeManUp = false;
@@ -1750,6 +1758,7 @@ class GameController extends ChangeNotifier {
         level = 4;
         figureIndex = 0;
         _levelStartThrows = throwsTotal;
+        levelTitleT = 10;
         manholeManUp = false;
         lampBroken = false;
         lampBroken2 = false;
@@ -1787,6 +1796,7 @@ class GameController extends ChangeNotifier {
         level = 5;
         figureIndex = 0;
         _levelStartThrows = throwsTotal;
+        levelTitleT = 10;
         dogOut = false;
         drunkardChasing = false;
         bottleHits = 0;
