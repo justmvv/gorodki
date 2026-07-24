@@ -849,6 +849,12 @@ class GameController extends ChangeNotifier {
           sledHasBat = true;
           bat.active = false;
           phase = Phase.sledCarry;
+          // _eventT drives _tickSledCarry below. Without resetting it
+          // here it inherits whatever stale value another chase/timer
+          // left it at, which can already exceed the old cutoff on the
+          // very first frame — the skier would vanish instantly instead
+          // of visibly skiing off.
+          _eventT = 0;
           _throwHadContact = true;
           _sfx('whoosh');
           _say('⛷️', L10n.t.sledKid, ttl: 4);
@@ -2129,8 +2135,10 @@ class GameController extends ChangeNotifier {
 
   void _tickSledCarry(double dt) {
     _eventT += dt;
-    sledX -= 7.0 * dt;
-    if (_eventT > 1.2) {
+    // Caught! It doesn't just vanish — it plants a turn and skis back
+    // off the way it came, bat in hand, until it's genuinely off-screen.
+    sledX += 7.0 * dt;
+    if (sledX > World.width + 2) {
       sledActive = false;
       sledHasBat = false;
       bat.active = false;

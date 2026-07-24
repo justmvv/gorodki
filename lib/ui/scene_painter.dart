@@ -3632,6 +3632,15 @@ class ScenePainter extends CustomPainter {
       ..color = const Color(0xFFD8484D)
       ..strokeWidth = 3;
 
+    c.save();
+    if (g.sledHasBat) {
+      // Caught! It's turned tail and is fleeing back the way it came —
+      // mirror the whole figure so the skis/poles/lean face the new
+      // direction of travel, same trick as _dog/_bear/the robot.
+      c.translate(o.dx * 2, 0);
+      c.scale(-1, 1);
+    }
+
     final wobble = math.sin(g.time * 14) * 1.5;
 
     // Two skis, angled downhill toward the front (it travels leftward),
@@ -3694,6 +3703,7 @@ class ScenePainter extends CustomPainter {
       c.drawCircle(
           o.translate(14 + i * 6.0, 3 + math.sin(g.time * 20 + i) * 3), 3, spray);
     }
+    c.restore();
   }
 
   /// The crow mid-heist: swoops in, grabs a gorodok, carries it off.
