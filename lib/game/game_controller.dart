@@ -261,9 +261,13 @@ class GameController extends ChangeNotifier {
   double get throwLineX =>
       (figure.isLetter || fromKon) ? World.konX : World.polukonX;
 
-  /// Show the animated "how to throw" hint until the very first throw.
+  /// Show the animated "how to throw" hint until the first throw of the
+  /// current level — not just once for the whole game. Levels reskin the
+  /// whole yard, so it's worth the reminder that you can drag from
+  /// anywhere on screen every time things change.
+  int _levelStartThrows = 0;
   bool get showTutorial =>
-      phase == Phase.aiming && throwsTotal == 0 && !aimingDrag;
+      phase == Phase.aiming && throwsTotal == _levelStartThrows && !aimingDrag;
 
   GameController() {
     _broomThreshold = 3 + _rng.nextInt(4);
@@ -298,6 +302,7 @@ class GameController extends ChangeNotifier {
     level = startLevel;
     figureIndex = 0;
     throwsTotal = 0;
+    _levelStartThrows = 0;
     windowBroken = false;
     bottleHits = 0;
     carHits = 0;
@@ -1600,6 +1605,7 @@ class GameController extends ChangeNotifier {
         // Dusk settles over the yard — level 2 begins.
         level = 2;
         figureIndex = 0;
+        _levelStartThrows = throwsTotal;
         carHits = 0;
         alarmT = 0;
         ownerWindowT = 0;
@@ -1623,6 +1629,7 @@ class GameController extends ChangeNotifier {
         // Overnight, the whole yard turns white — level 3 begins.
         level = 3;
         figureIndex = 0;
+        _levelStartThrows = throwsTotal;
         snowmanStage = 0;
         sledActive = false;
         manholeManUp = false;
@@ -1648,6 +1655,7 @@ class GameController extends ChangeNotifier {
         // A blood moon rises over the yard — level 4 begins.
         level = 4;
         figureIndex = 0;
+        _levelStartThrows = throwsTotal;
         manholeManUp = false;
         lampBroken = false;
         lampBroken2 = false;
@@ -1683,6 +1691,7 @@ class GameController extends ChangeNotifier {
         // Dawn breaks, and mercifully, over golden sand — level 5 begins.
         level = 5;
         figureIndex = 0;
+        _levelStartThrows = throwsTotal;
         dogOut = false;
         drunkardChasing = false;
         bottleHits = 0;

@@ -79,7 +79,7 @@ class ScenePainter extends CustomPainter {
     if (g.winter) _snowfall(canvas, size);
     if (g.playerBuried) _avalanche(canvas, size);
     _aim(canvas);
-    _tutorial(canvas);
+    _tutorial(canvas, size);
     _figurePreview(canvas, size);
   }
 
@@ -3811,10 +3811,13 @@ class ScenePainter extends CustomPainter {
   /// Animated "how to play" hint: a hand pulls back from the player
   /// (slingshot-style), then a ghost arrow shows the resulting throw.
   /// Loops until the very first throw is made.
-  void _tutorial(Canvas c) {
+  void _tutorial(Canvas c, Size s) {
     if (!g.showTutorial) return;
     final t = (g.time % 2.2) / 2.2; // loop phase 0..1
-    final start = _w(g.playerX + 0.35, World.throwHandY);
+    // Anchored to the middle of the screen rather than the player sprite
+    // (which sits near the left edge) — the drag gesture works from
+    // anywhere, and showing it dead center makes that obvious.
+    final start = Offset(s.width * 0.5, s.height * 0.58);
     final end = start + Offset(-1.3 * _scale, 0.85 * _scale);
 
     double fade = 1;
