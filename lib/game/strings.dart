@@ -86,7 +86,10 @@ class GameStrings {
       seagullImpatient,
       seagullHit,
       moleMsgNightmare,
-      moleMsgBeach;
+      moleMsgBeach,
+      ravenSteal,
+      seagullSteal,
+      paragliderIntercept;
   final List<String> missLines, bottleLines, snowmanLines;
 
   const GameStrings({
@@ -173,6 +176,9 @@ class GameStrings {
     required this.seagullHit,
     required this.moleMsgNightmare,
     required this.moleMsgBeach,
+    required this.ravenSteal,
+    required this.seagullSteal,
+    required this.paragliderIntercept,
     required this.missLines,
     required this.bottleLines,
     required this.snowmanLines,
@@ -288,7 +294,7 @@ const en = GameStrings(
   chainSnag:
       'Your bat is now hanging from a rusty chain, swinging ominously. Something giggles nearby.',
   netSnag:
-      'Tangled in the volleyball net! Somewhere, a beach team is now down a player.',
+      'BOING! The volleyball net is strung tight and springs the bat right back at you. A nearby team briefly applauds the form.',
   nightmareWindowCrash:
       'CRASH! A pale face appears in the shattered window and moans about property values. (+1 penalty throw)',
   nightmareWindowAgain: 'That window was already haunted. Now it just echoes.',
@@ -308,6 +314,12 @@ const en = GameStrings(
       'A bony hand bursts from the grave and redecorates your figure with theatrical malice.',
   moleMsgBeach:
       'A rogue beach ball rolls straight through the gorod, scattering your figure. Someone yells "SORRY!" from far away.',
+  ravenSteal:
+      'A raven has claimed your bat. It regards you with what can only be described as contempt.',
+  seagullSteal:
+      'A seagull has claimed your bat for the flock. It has done this exact maneuver before.',
+  paragliderIntercept:
+      'A paraglider swoops low and snags your bat mid-air! "Sorry, mate, thermal\'s calling!"',
   snowmanLines: [
     'The snowman lost his bucket. He is above such things.',
     'The snowman is now a third shorter. The carrot remains optimistic.',
@@ -434,7 +446,7 @@ const de = GameStrings(
   chainSnag:
       'Dein Schlagholz hängt jetzt an einer rostigen Kette und schwingt unheilvoll. Irgendwo kichert etwas.',
   netSnag:
-      'Im Volleyballnetz verheddert! Irgendwo hat ein Strandteam jetzt einen Spieler weniger.',
+      'BOING! Das Volleyballnetz ist straff gespannt und schleudert das Schlagholz zurück. Ein Team in der Nähe applaudiert kurz der Technik.',
   nightmareWindowCrash:
       'KRACH! Ein blasses Gesicht erscheint im zerbrochenen Fenster und jammert über die Grundstückspreise. (+1 Strafwurf)',
   nightmareWindowAgain: 'Das Fenster war schon verflucht. Jetzt hallt es nur noch.',
@@ -453,6 +465,12 @@ const de = GameStrings(
       'Eine knochige Hand bricht aus dem Grab hervor und dekoriert deine Figur mit theatralischer Bosheit um.',
   moleMsgBeach:
       'Ein entlaufener Wasserball rollt mitten durch den Gorod und wirft deine Figur um. Jemand ruft von weitem "SORRY!".',
+  ravenSteal:
+      'Ein Rabe hat dein Schlagholz beschlagnahmt. Er sieht dich mit unverhohlener Verachtung an.',
+  seagullSteal:
+      'Eine Möwe hat dein Schlagholz für den Schwarm beschlagnahmt. Dieses Manöver hat sie eindeutig schon geübt.',
+  paragliderIntercept:
+      'Ein Gleitschirmflieger saust tief herab und schnappt sich dein Schlagholz mitten in der Luft! "Sorry, die Thermik ruft!"',
   snowmanLines: [
     'Der Schneemann hat seinen Eimer verloren. Er steht über solchen Dingen.',
     'Der Schneemann ist jetzt ein Drittel kürzer. Die Karotte bleibt optimistisch.',
@@ -580,7 +598,7 @@ const es = GameStrings(
   chainSnag:
       'Tu bate cuelga ahora de una cadena oxidada, balanceándose de forma inquietante. Algo se ríe por ahí cerca.',
   netSnag:
-      '¡Enredado en la red de vóley playa! En algún lugar, un equipo de playa se ha quedado sin un jugador.',
+      '¡BOING! La red de vóley playa está bien tensa y devuelve el bate directo hacia ti. Un equipo cercano aplaude brevemente la técnica.',
   nightmareWindowCrash:
       '¡CRASH! Un rostro pálido aparece en la ventana rota y se lamenta del valor de la propiedad. (+1 lanzamiento de penalización)',
   nightmareWindowAgain: 'Esa ventana ya estaba embrujada. Ahora solo hace eco.',
@@ -599,6 +617,12 @@ const es = GameStrings(
       'Una mano huesuda sale de la tumba y redecora tu figura con malicia teatral.',
   moleMsgBeach:
       'Una pelota de playa fuera de control rueda directamente por el gorod, dispersando tu figura. Alguien grita "¡PERDÓN!" desde lejos.',
+  ravenSteal:
+      'Un cuervo ha reclamado tu bate. Te mira con lo que solo puede describirse como desprecio.',
+  seagullSteal:
+      'Una gaviota ha reclamado tu bate para la bandada. Claramente ya ha hecho esta maniobra antes.',
+  paragliderIntercept:
+      '¡Un parapente baja en picado y atrapa tu bate en pleno vuelo! "¡Perdona, me llama el térmico!"',
   snowmanLines: [
     'El muñeco de nieve perdió su cubo. Está por encima de esas cosas.',
     'El muñeco de nieve es ahora un tercio más bajo. La zanahoria sigue optimista.',
@@ -725,7 +749,7 @@ const nl = GameStrings(
   chainSnag:
       'Je knuppel hangt nu aan een roestige ketting, onheilspellend zwaaiend. Er giechelt iets in de buurt.',
   netSnag:
-      'Verstrikt in het volleybalnet! Ergens heeft een strandteam nu een speler te weinig.',
+      'BOING! Het volleybalnet staat strak gespannen en katapulteert de knuppel terug. Een team verderop applaudisseert kort voor de techniek.',
   nightmareWindowCrash:
       'KRAK! Een bleek gezicht verschijnt in het gebroken raam en klaagt over de huizenprijzen. (+1 strafworp)',
   nightmareWindowAgain: 'Dat raam was al behekst. Nu galmt het alleen maar.',
@@ -744,6 +768,12 @@ const nl = GameStrings(
       'Een benige hand breekt uit het graf en herdecoreert je figuur met theatrale kwaadaardigheid.',
   moleMsgBeach:
       'Een losgeslagen strandbal rolt recht door de gorod en gooit je figuur omver. Iemand roept van veraf "SORRY!".',
+  ravenSteal:
+      'Een raaf heeft je knuppel opgeëist. Hij kijkt je aan met wat alleen maar minachting genoemd kan worden.',
+  seagullSteal:
+      'Een meeuw heeft je knuppel opgeëist voor de zwerm. Dit trucje heeft ze duidelijk al eerder gedaan.',
+  paragliderIntercept:
+      'Een parapente duikt laag over en grist je knuppel zo uit de lucht! "Sorry hoor, de thermiek roept!"',
   snowmanLines: [
     'De sneeuwpop is zijn emmer kwijt. Hij staat boven zulke dingen.',
     'De sneeuwpop is nu een derde korter. De wortel blijft optimistisch.',

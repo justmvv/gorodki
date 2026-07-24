@@ -203,19 +203,74 @@ class ScenePainter extends CustomPainter {
       }
       c.drawPath(path, wave);
     }
-    // A distant sail, minding its own business.
-    final sailX = s.width * 0.68 + math.sin(g.time * 0.05) * 20;
-    final sailY = horizonY + 6;
-    c.drawLine(Offset(sailX, sailY), Offset(sailX, sailY - 16),
-        Paint()
-          ..color = Colors.white70
-          ..strokeWidth = 1.2);
-    final sail = Path()
-      ..moveTo(sailX, sailY - 15)
-      ..lineTo(sailX + 10, sailY - 4)
-      ..lineTo(sailX, sailY - 3)
+    // Distant boats, drifting along the horizon at their own unhurried
+    // pace — a sail, a couple of hull silhouettes, going about their day.
+    for (int i = 0; i < 3; i++) {
+      final speed = 3.5 + i * 2.2;
+      final laneY = horizonY + 4 + i * 5.0;
+      final bx = (g.time * speed + i * 220) % (s.width + 160) - 80;
+      if (i == 0) {
+        // A little sailboat.
+        c.drawLine(Offset(bx, laneY), Offset(bx, laneY - 16),
+            Paint()
+              ..color = Colors.white70
+              ..strokeWidth = 1.2);
+        final sail = Path()
+          ..moveTo(bx, laneY - 15)
+          ..lineTo(bx + 10, laneY - 4)
+          ..lineTo(bx, laneY - 3)
+          ..close();
+        c.drawPath(sail, Paint()..color = Colors.white70);
+      } else {
+        // A low cargo-ship silhouette.
+        final hull = Path()
+          ..moveTo(bx - 12, laneY)
+          ..lineTo(bx + 12, laneY)
+          ..lineTo(bx + 9, laneY + 3)
+          ..lineTo(bx - 9, laneY + 3)
+          ..close();
+        c.drawPath(hull, Paint()..color = const Color(0xFF2A3038).withValues(alpha: 0.6));
+        c.drawLine(Offset(bx - 3, laneY), Offset(bx - 3, laneY - 5),
+            Paint()
+              ..color = const Color(0xFF2A3038).withValues(alpha: 0.6)
+              ..strokeWidth = 1.5);
+      }
+    }
+
+    // A pleasure boat, much closer in, puttering along the shoreline
+    // with a proper wake trailing behind it.
+    final pbSpeed = 16.0;
+    final pbX = (g.time * pbSpeed) % (s.width + 220) - 110;
+    final pbY = _groundY - 44;
+    final pbHull = Path()
+      ..moveTo(pbX - 22, pbY)
+      ..quadraticBezierTo(pbX - 25, pbY + 9, pbX - 15, pbY + 11)
+      ..lineTo(pbX + 17, pbY + 11)
+      ..quadraticBezierTo(pbX + 25, pbY + 9, pbX + 20, pbY)
       ..close();
-    c.drawPath(sail, Paint()..color = Colors.white70);
+    c.drawPath(pbHull, Paint()..color = const Color(0xFFF2F2EE));
+    c.drawLine(Offset(pbX - 20, pbY), Offset(pbX + 18, pbY),
+        Paint()
+          ..color = const Color(0xFFCF6679)
+          ..strokeWidth = 2);
+    c.drawRect(Rect.fromLTWH(pbX - 9, pbY - 11, 18, 11),
+        Paint()..color = const Color(0xFF2FA0A8));
+    c.drawRect(Rect.fromLTWH(pbX - 6, pbY - 9, 12, 5),
+        Paint()..color = const Color(0xFFBFE3E6));
+    c.drawLine(Offset(pbX + 3, pbY - 11), Offset(pbX + 3, pbY - 18),
+        Paint()
+          ..color = const Color(0xFF3A3742)
+          ..strokeWidth = 1.5);
+    // Wake, fanning out behind (the boat travels left-to-right, so the
+    // wake trails to its left).
+    final wakeP = Paint()..style = PaintingStyle.stroke..strokeWidth = 1.4;
+    for (int i = 1; i <= 4; i++) {
+      wakeP.color = Colors.white.withValues(alpha: (0.4 / i).clamp(0.0, 1.0));
+      c.drawOval(
+          Rect.fromCenter(
+              center: Offset(pbX - 20 - i * 11, pbY + 11), width: 16, height: 5),
+          wakeP);
+    }
 
     // Sand dunes framing the shoreline, and a couple of palms for shade
     // nobody asked for.
@@ -601,20 +656,30 @@ class ScenePainter extends CustomPainter {
 
   /// Beach reskin of the laundry line: a taut volleyball net.
   void _volleyballNet(Canvas c) {
+    // Full-height posts planted in the sand...
     final poleP = Paint()
       ..color = const Color(0xFFE9E3CE)
       ..strokeWidth = 4;
-    final top1 = _w(World.ropeX1 - 0.15, World.ropeY + 0.35);
-    final top2 = _w(World.ropeX2 + 0.15, World.ropeY + 0.35);
-    final bot1 = _w(World.ropeX1 - 0.15, 0);
-    final bot2 = _w(World.ropeX2 + 0.15, 0);
-    c.drawLine(bot1, top1, poleP);
-    c.drawLine(bot2, top2, poleP);
+    final poleTop1 = _w(World.ropeX1 - 0.15, World.ropeY + 0.55);
+    final poleTop2 = _w(World.ropeX2 + 0.15, World.ropeY + 0.55);
+    final base1 = _w(World.ropeX1 - 0.15, 0);
+    final base2 = _w(World.ropeX2 + 0.15, 0);
+    c.drawLine(base1, poleTop1, poleP);
+    c.drawLine(base2, poleTop2, poleP);
+
+    // ...but the net itself is only strung at regulation net height (a
+    // band around eye level), not floor-to-pole-top. It sways gently —
+    // it's meant to spring, not snag.
+    final sway = math.sin(g.time * 3) * 1.5;
+    final top1 = _w(World.ropeX1 - 0.15, World.ropeY + 0.3);
+    final top2 = _w(World.ropeX2 + 0.15, World.ropeY + 0.3);
+    final bot1 = _w(World.ropeX1 - 0.15, World.ropeY - 0.3).translate(0, sway);
+    final bot2 = _w(World.ropeX2 + 0.15, World.ropeY - 0.3).translate(0, sway);
 
     final mesh = Paint()
       ..color = Colors.white.withValues(alpha: 0.6)
       ..strokeWidth = 1;
-    const cols = 8, rows = 5;
+    const cols = 8, rows = 3;
     for (int i = 0; i <= cols; i++) {
       final t = i / cols;
       c.drawLine(Offset.lerp(top1, top2, t)!, Offset.lerp(bot1, bot2, t)!, mesh);
@@ -623,10 +688,13 @@ class ScenePainter extends CustomPainter {
       final t = j / rows;
       c.drawLine(Offset.lerp(top1, bot1, t)!, Offset.lerp(top2, bot2, t)!, mesh);
     }
-    // The taped top band.
+    // Taped top and bottom bands.
     c.drawLine(top1, top2, Paint()
       ..color = const Color(0xFFCF6679)
       ..strokeWidth = 5);
+    c.drawLine(bot1, bot2, Paint()
+      ..color = const Color(0xFFCF6679)
+      ..strokeWidth = 4);
   }
 
   /// Nightmare reskin of the laundry line: rusty chains, swaying, with a
@@ -1136,15 +1204,14 @@ class ScenePainter extends CustomPainter {
     final o = _w(World.benchX, 0);
     final w = World.benchW * _scale;
     final seatY = o.dy - 0.45 * _scale;
-    // The nightmare yard's Uncle Gena is, strictly speaking, deceased —
-    // rendered a little translucent and a little green about it.
-    final ghostA = g.nightmare ? 0.6 : 1.0;
-    final ghostTint = g.nightmare ? const Color(0xFF7EA888) : null;
+    // The nightmare yard's Uncle Gena has fully committed to the bit: red
+    // skin, dark coat, small horns. No longer subtle about it.
+    final skinColor = g.nightmare ? const Color(0xFFB33A2E) : const Color(0xFFE0B48C);
+    final coatColor = g.nightmare ? const Color(0xFF3A1418) : const Color(0xFF6E7B65);
 
     // Bench.
     final wood = Paint()
-      ..color = (g.nightmare ? const Color(0xFF57525E) : const Color(0xFF7A5230))
-          .withValues(alpha: ghostA);
+      ..color = g.nightmare ? const Color(0xFF2A2228) : const Color(0xFF7A5230);
     c.drawRect(Rect.fromLTWH(o.dx, seatY, w, 6), wood);
     c.drawRect(Rect.fromLTWH(o.dx, seatY - 0.45 * _scale, w, 5), wood); // back
     c.drawRect(Rect.fromLTWH(o.dx + 4, seatY, 5, o.dy - seatY), wood);
@@ -1155,10 +1222,8 @@ class ScenePainter extends CustomPainter {
     } else {
       // Uncle Gena, seated.
       final cx = o.dx + w * 0.45;
-      final skin =
-          Paint()..color = (ghostTint ?? const Color(0xFFE0B48C)).withValues(alpha: ghostA);
-      final coat =
-          Paint()..color = (ghostTint ?? const Color(0xFF6E7B65)).withValues(alpha: ghostA);
+      final skin = Paint()..color = skinColor;
+      final coat = Paint()..color = coatColor;
       // Torso (slouched at a physically improbable but spiritually accurate
       // angle).
       c.drawRRect(
@@ -1166,11 +1231,26 @@ class ScenePainter extends CustomPainter {
               Rect.fromLTWH(cx - 11, seatY - 34, 24, 34),
               const Radius.circular(7)),
           coat);
-      // Head + ushanka.
+      // Head + ushanka (horns poke straight through it in the nightmare
+      // yard — the hat was simply not consulted).
       final head = Offset(cx + 1, seatY - 42);
       c.drawCircle(head, 9, skin);
       c.drawArc(Rect.fromCircle(center: head, radius: 10.5), math.pi * 0.95,
           math.pi, true, Paint()..color = const Color(0xFF5A4632));
+      if (g.nightmare) {
+        final horn = Paint()..color = const Color(0xFF1B1214);
+        for (final side in [-1.0, 1.0]) {
+          final base = head.translate(side * 6, -8);
+          final tip = head.translate(side * 10, -16);
+          c.drawPath(
+              Path()
+                ..moveTo(base.dx - 2, base.dy)
+                ..lineTo(tip.dx, tip.dy)
+                ..lineTo(base.dx + 2, base.dy)
+                ..close(),
+              horn);
+        }
+      }
       // Majestic nose.
       c.drawCircle(
           head.translate(7, 2), 3, Paint()..color = const Color(0xFFD08B6E));
@@ -1206,6 +1286,25 @@ class ScenePainter extends CustomPainter {
       }
     }
 
+    if (g.nightmare) {
+      // Not a bottle anymore: a small cauldron, bubbling with lava, tips
+      // over and rolls exactly the same way a bottle would.
+      if (g.bottleFlying) {
+        final bo = _w(g.bottleFx, g.bottleFy);
+        c.save();
+        c.translate(bo.dx, bo.dy);
+        c.rotate(g.time * 10);
+        _cauldron(c);
+        c.restore();
+      } else {
+        final bo = _w(World.bottleX, 0);
+        c.save();
+        c.translate(bo.dx, bo.dy - World.bottleH * _scale * 0.5);
+        _cauldron(c);
+        c.restore();
+      }
+      return;
+    }
     // The bottle: on the ground, or in low orbit.
     final bottleP = Paint()..color = const Color(0xFF3E7A46);
     if (g.bottleFlying) {
@@ -1232,22 +1331,39 @@ class ScenePainter extends CustomPainter {
     }
   }
 
+  /// A small cauldron of lava, standing in for the bottle in the
+  /// nightmare yard. Drawn centered on the local origin.
+  void _cauldron(Canvas c) {
+    final pot = Paint()..color = const Color(0xFF1B1920);
+    c.drawArc(const Rect.fromLTWH(-9, -8, 18, 16), 0, math.pi, false,
+        pot..style = PaintingStyle.stroke..strokeWidth = 5);
+    // Handles.
+    c.drawCircle(const Offset(-9, -6), 2, Paint()..color = const Color(0xFF1B1920));
+    c.drawCircle(const Offset(9, -6), 2, Paint()..color = const Color(0xFF1B1920));
+    // Bubbling lava, glowing.
+    final glow = 0.6 + 0.3 * math.sin(g.time * 6);
+    c.drawOval(const Rect.fromLTWH(-8, -9, 16, 7),
+        Paint()..color = Color.fromRGBO(255, 110, 40, 0.5 + glow * 0.3));
+    c.drawOval(const Rect.fromLTWH(-6, -8, 12, 5),
+        Paint()..color = Color.fromRGBO(255, 200, 90, 0.7 + glow * 0.3));
+    // A stray bubble popping.
+    c.drawCircle(Offset(-2 + math.sin(g.time * 8) * 2, -9), 1.4,
+        Paint()..color = const Color(0xFFFFD873));
+  }
+
   /// Uncle Gena on the warpath, weapon of choice held high (a broom on
-  /// dry land, a flip-flop on the beach, and — in the nightmare yard —
-  /// still a broom, wielded by a gentleman no longer bound by physics).
+  /// dry land, a flip-flop on the beach, and a pitchfork in the
+  /// nightmare yard, where he's stopped pretending otherwise).
   void _genaWithBroom(Canvas c) {
     final o = _w(g.drunkardX, 0);
-    final ghostA = g.nightmare ? 0.6 : 1.0;
     final skin = Paint()
-      ..color = (g.nightmare ? const Color(0xFF7EA888) : const Color(0xFFE0B48C))
-          .withValues(alpha: ghostA);
+      ..color = g.nightmare ? const Color(0xFFB33A2E) : const Color(0xFFE0B48C);
     final coat = Paint()
-      ..color = (g.nightmare
-              ? const Color(0xFF7EA888)
-              : g.beach
-                  ? const Color(0xFFD8543C)
-                  : const Color(0xFF6E7B65))
-          .withValues(alpha: ghostA);
+      ..color = g.nightmare
+          ? const Color(0xFF3A1418)
+          : g.beach
+              ? const Color(0xFFD8543C)
+              : const Color(0xFF6E7B65);
     final run = math.sin(g.time * 16) * 6;
 
     // Legs, moving with unexpected athleticism.
@@ -1261,7 +1377,8 @@ class ScenePainter extends CustomPainter {
         RRect.fromRectAndRadius(Rect.fromLTWH(o.dx - 11, o.dy - 60, 22, 30),
             const Radius.circular(6)),
         coat);
-    // Head + ushanka (sunglasses on the beach; the ushanka is nightmare-proof).
+    // Head + ushanka (sunglasses on the beach; horns punch straight
+    // through the ushanka in the nightmare yard).
     final head = Offset(o.dx, o.dy - 68);
     c.drawCircle(head, 9, skin);
     if (g.beach) {
@@ -1274,6 +1391,20 @@ class ScenePainter extends CustomPainter {
     } else {
       c.drawArc(Rect.fromCircle(center: head, radius: 10.5), math.pi * 0.95,
           math.pi, true, Paint()..color = const Color(0xFF5A4632));
+    }
+    if (g.nightmare) {
+      final horn = Paint()..color = const Color(0xFF1B1214);
+      for (final side in [-1.0, 1.0]) {
+        final base = head.translate(side * 6, -8);
+        final tip = head.translate(side * 10, -16);
+        c.drawPath(
+            Path()
+              ..moveTo(base.dx - 2, base.dy)
+              ..lineTo(tip.dx, tip.dy)
+              ..lineTo(base.dx + 2, base.dy)
+              ..close(),
+            horn);
+      }
     }
     c.drawCircle(
         head.translate(-7, 2), 3, Paint()..color = const Color(0xFFD08B6E));
@@ -1293,6 +1424,19 @@ class ScenePainter extends CustomPainter {
       c.drawLine(hand.translate(4, 4), tip, Paint()
         ..color = const Color(0xFF8B5E34)
         ..strokeWidth = 4);
+    } else if (g.nightmare) {
+      // A pitchfork: stick + three prongs, appropriately dramatic.
+      final stick = Paint()
+        ..color = const Color(0xFF1B1920)
+        ..strokeWidth = 3;
+      final tip = hand.translate(-22, -16);
+      c.drawLine(hand.translate(10, 8), tip, stick);
+      final prong = Paint()
+        ..color = const Color(0xFF3A3742)
+        ..strokeWidth = 2;
+      for (final dx in [-6.0, 0.0, 6.0]) {
+        c.drawLine(tip.translate(dx * 0.4, 2), tip.translate(dx, -10), prong);
+      }
     } else {
       // Broom: stick + bristles.
       final stick = Paint()
@@ -1658,6 +1802,33 @@ class ScenePainter extends CustomPainter {
   void _batShape(Canvas c) {
     final len = World.batLength * _scale;
     final r = World.batRadius * 2.4 * _scale;
+    if (g.nightmare) {
+      // Not a bat anymore, strictly speaking: a glowing pink blade, held
+      // together by nothing but vibes and a small dark hilt.
+      final glow = 0.7 + 0.3 * math.sin(g.time * 6);
+      final blade = RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset.zero, width: len, height: r),
+          Radius.circular(r / 2));
+      c.drawRRect(blade.inflate(9),
+          Paint()..color = Color.fromRGBO(255, 60, 180, 0.08 * glow));
+      c.drawRRect(blade.inflate(5),
+          Paint()..color = Color.fromRGBO(255, 70, 190, 0.16 * glow));
+      c.drawRRect(blade.inflate(2),
+          Paint()..color = Color.fromRGBO(255, 90, 200, 0.35 * glow));
+      c.drawRRect(blade, Paint()..color = const Color(0xFFFF6FC6));
+      c.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromCenter(
+                  center: Offset.zero, width: len * 0.88, height: r * 0.32),
+              Radius.circular(r * 0.2)),
+          Paint()..color = Colors.white.withValues(alpha: 0.85));
+      // A small dark hilt at the grip end.
+      c.drawRect(
+          Rect.fromCenter(
+              center: Offset(-len * 0.44, 0), width: len * 0.14, height: r * 1.3),
+          Paint()..color = const Color(0xFF1B1920));
+      return;
+    }
     c.drawRRect(
         RRect.fromRectAndRadius(
             Rect.fromCenter(center: Offset.zero, width: len, height: r),
@@ -1801,11 +1972,55 @@ class ScenePainter extends CustomPainter {
       c.restore();
       return;
     }
+    if (g.beach) {
+      // The seagull: long, bent wings held mostly still, gliding on the
+      // sea breeze with the occasional lazy flap — nothing like a
+      // pigeon's frantic wingbeat.
+      c.save();
+      c.translate(o.dx, o.dy);
+      if (g.pigeon.vx > 0.1) c.scale(-1, 1);
+      final body = Paint()..color = const Color(0xFFF5F5F0);
+      final grey = Paint()..color = const Color(0xFFAEB6BE);
+      // Long, slender body and small head.
+      c.drawOval(
+          Rect.fromCenter(center: Offset.zero, width: 26, height: 9), body);
+      c.drawCircle(const Offset(-12, -3), 4.5, body);
+      c.drawCircle(const Offset(-14, -4), 1.1, Paint()..color = Colors.black);
+      // Beak — a proper orange-yellow gull hook.
+      final beak = Path()
+        ..moveTo(-16, -3)
+        ..lineTo(-21, -2)
+        ..lineTo(-16, -0.5)
+        ..close();
+      c.drawPath(beak, Paint()..color = const Color(0xFFE8912E));
+      // Wings: a slow glide-flap, bent sharply at the wrist like a real
+      // gull — mostly held flat, with a gentle rise-and-fall.
+      final glide = math.sin(g.time * 4.5) * 4;
+      for (final side in [-1.0, 1.0]) {
+        final wing = Path()
+          ..moveTo(side * 2, -1)
+          ..quadraticBezierTo(side * 12, -4 - glide, side * 22, -1 - glide * 1.4)
+          ..quadraticBezierTo(side * 14, 1, side * 2, 1)
+          ..close();
+        c.drawPath(wing, side < 0 ? body : grey);
+      }
+      // Grey wingtip accents.
+      for (final side in [-1.0, 1.0]) {
+        c.drawLine(
+            Offset(side * 20, -1 - glide * 1.3),
+            Offset(side * 24, 1 - glide),
+            Paint()
+              ..color = const Color(0xFF3A3A3E)
+              ..strokeWidth = 2);
+      }
+      c.restore();
+      return;
+    }
     c.save();
     c.translate(o.dx, o.dy);
     // Always fly beak-first: mirror the sprite when moving right.
     if (g.pigeon.vx > 0.1) c.scale(-1, 1);
-    final body = Paint()..color = g.beach ? const Color(0xFFF2F2EE) : const Color(0xFF8E9AA8);
+    final body = Paint()..color = const Color(0xFF8E9AA8);
     c.drawOval(
         Rect.fromCenter(center: Offset.zero, width: 22, height: 13), body);
     c.drawCircle(const Offset(-10, -4), 5, body);
@@ -1894,7 +2109,57 @@ class ScenePainter extends CustomPainter {
     c.drawCircle(head.translate(0.11 * k, 0.06 * k - math.sin(t * 12) * 2), 4, paw);
   }
 
+  /// Beach reskin of the quadcopter: a paraglider, lazily patrolling the
+  /// same airspace with considerably worse intentions.
+  void _paraglider(Canvas c) {
+    if (!g.drone.active) return;
+    final o = _w(g.drone.x, g.drone.y);
+    final sway = math.sin(g.time * 2.2) * 4;
+    final canopyC = o.translate(sway, -20);
+
+    final canopy = Path()
+      ..moveTo(canopyC.dx - 32, canopyC.dy)
+      ..quadraticBezierTo(canopyC.dx, canopyC.dy - 13, canopyC.dx + 32, canopyC.dy)
+      ..quadraticBezierTo(canopyC.dx, canopyC.dy - 5, canopyC.dx - 32, canopyC.dy)
+      ..close();
+    c.drawPath(canopy, Paint()..color = const Color(0xFFE85B4B));
+    final panel = Path()
+      ..moveTo(canopyC.dx - 11, canopyC.dy - 1)
+      ..quadraticBezierTo(canopyC.dx, canopyC.dy - 12, canopyC.dx + 11, canopyC.dy - 1)
+      ..quadraticBezierTo(canopyC.dx, canopyC.dy - 5, canopyC.dx - 11, canopyC.dy - 1)
+      ..close();
+    c.drawPath(panel, Paint()..color = const Color(0xFFF2CE7E));
+
+    final pilot = o.translate(sway * 0.35, 6);
+    final lineP = Paint()
+      ..color = const Color(0xFF2A2830)
+      ..strokeWidth = 1;
+    c.drawLine(canopyC.translate(-28, 0), pilot.translate(-4, -4), lineP);
+    c.drawLine(canopyC.translate(28, 0), pilot.translate(4, -4), lineP);
+    c.drawLine(canopyC.translate(0, -3), pilot, lineP);
+
+    // The pilot, dangling in a harness, thrilled about all this.
+    c.drawCircle(pilot, 5, Paint()..color = const Color(0xFFE0B48C));
+    c.drawRRect(
+        RRect.fromRectAndRadius(
+            Rect.fromCenter(center: pilot.translate(0, 8), width: 8, height: 10),
+            const Radius.circular(3)),
+        Paint()..color = const Color(0xFF2FA0A8));
+
+    // Winch cable down to the confiscated bat.
+    if (g.drone.carrying) {
+      c.drawLine(pilot.translate(0, 13), _w(g.bat.x, g.bat.y),
+          Paint()
+            ..color = const Color(0xFF2A2830)
+            ..strokeWidth = 1.4);
+    }
+  }
+
   void _drone(Canvas c) {
+    if (g.beach) {
+      _paraglider(c);
+      return;
+    }
     if (!g.drone.active) return;
     final o = _w(g.drone.x, g.drone.y);
     final k = _scale;

@@ -374,9 +374,10 @@ class GameController extends ChangeNotifier {
         ..y = 3.6 + _rng.nextDouble() * 1.6
         ..vx = -3.2 - _rng.nextDouble() * 1.5
         ..vy = 0;
-    } else if (roll < 0.15 && !drone.active && level == 1) {
+    } else if (roll < 0.15 && !drone.active && (level == 1 || beach)) {
       // The quadcopter flies only in good daylight (optics, warranty).
-      // A quadcopter descends on patrol.
+      // On the beach it's a paraglider instead — same airspace, better
+      // view. Either way, it descends on patrol.
       drone
         ..active = true
         ..carrying = false
@@ -555,12 +556,22 @@ class GameController extends ChangeNotifier {
         pigeon.vx = -2.5;
         pigeon.vy = 2.8;
         phase = Phase.pigeonCarry;
-        _sfx(evening ? 'coo' : (winter ? 'caw' : 'coo'));
+        _sfx(evening ? 'coo' : ((winter || nightmare) ? 'caw' : 'coo'));
         _say(
-            evening ? '🦇' : (winter ? '🐦‍⬛' : '🕊️'),
+            evening
+                ? '🦇'
+                : (winter || nightmare)
+                    ? '🐦‍⬛'
+                    : '🕊️',
             evening
                 ? L10n.t.batSteal
-                : (winter ? L10n.t.crowBatSteal : L10n.t.pigeonSteal));
+                : winter
+                    ? L10n.t.crowBatSteal
+                    : nightmare
+                        ? L10n.t.ravenSteal
+                        : beach
+                            ? L10n.t.seagullSteal
+                            : L10n.t.pigeonSteal);
         return;
       }
     }
@@ -572,7 +583,8 @@ class GameController extends ChangeNotifier {
         drone.carrying = true;
         phase = Phase.droneCarry;
         _sfx('drone');
-        _say('🚁', L10n.t.droneIntercept);
+        _say(beach ? '🪂' : '🚁',
+            beach ? L10n.t.paragliderIntercept : L10n.t.droneIntercept);
         return;
       }
     }
@@ -730,7 +742,18 @@ class GameController extends ChangeNotifier {
         bat.x < World.ropeX2 &&
         (bat.y - World.ropeY).abs() < 0.28) {
       _ropeChecked = true;
-      if (_rng.nextDouble() < 0.35) {
+      if (beach) {
+        // The net doesn't snag — it's strung taut and springs the bat
+        // straight back out, a little humbled.
+        if (_rng.nextDouble() < 0.5) {
+          bat.vx = -bat.vx.abs() * 0.65 - 0.5;
+          bat.vy = bat.vy.abs() * 0.35 + 1.2;
+          _throwHadContact = true;
+          _sfx('boing');
+          _say('🏐', L10n.t.netSnag);
+          return;
+        }
+      } else if (_rng.nextDouble() < 0.35) {
         bat
           ..onRope = true
           ..ropeSwing = 0
@@ -739,8 +762,8 @@ class GameController extends ChangeNotifier {
           ..vy = 0;
         _throwHadContact = true;
         _sfx('boing');
-        _say(nightmare ? '⛓️' : (beach ? '🏐' : '🩲'),
-            nightmare ? L10n.t.chainSnag : (beach ? L10n.t.netSnag : L10n.t.ropeSnag));
+        _say(nightmare ? '⛓️' : '🩲',
+            nightmare ? L10n.t.chainSnag : L10n.t.ropeSnag);
         return;
       }
     }
@@ -898,6 +921,11 @@ class GameController extends ChangeNotifier {
       pigeon.x += pigeon.vx * dt * (0.5 + 0.9 * math.sin(time * 7).abs());
       pigeon.y += math.sin(time * 13) * 3.2 * dt +
           math.sin(time * 3.7) * 1.1 * dt;
+    } else if (beach) {
+      // A seagull soars: long, near-flat glides on the sea breeze, with a
+      // slow rise-and-fall instead of a pigeon's fast, level beeline.
+      pigeon.x += pigeon.vx * dt * (0.85 + 0.2 * math.sin(time * 2.2).abs());
+      pigeon.y += math.sin(time * 2.6) * 1.6 * dt + math.sin(time * 0.9) * 0.5 * dt;
     } else {
       pigeon.x += pigeon.vx * dt;
       pigeon.y += pigeon.vy * dt + math.sin(time * 9) * 0.4 * dt;
@@ -1142,6 +1170,16 @@ class GameController extends ChangeNotifier {
                           ? L10n.t.seagullHit
                           : L10n.t.pigeonHit,
               ttl: 4.2);
+        } else if (beach) {
+          // A seagull doesn't beeline — it glides in on a long, gently
+          // banking approach with a lazy up-down wobble.
+          const sp = 6.0;
+          final wobble = math.sin(time * 3.2) * 1.4;
+          pigeon
+            ..vx = dx / d * sp
+            ..vy = dy / d * sp + wobble
+            ..x += dx / d * sp * dt
+            ..y += (dy / d * sp + wobble) * dt;
         } else {
           // Keep velocity on the bird so the sprite faces its dive
           // direction (down one stroke of the V, up the other).
@@ -1155,7 +1193,8 @@ class GameController extends ChangeNotifier {
       }
     } else {
       // Departure: player flees to the washroom. The bat/pigeon/crow
-      // keeps flying off on its own (erratically, if it's a bat).
+      // keeps flying off on its own (erratically, if it's a bat; soaring,
+      // if it's a gull).
       if (pigeon.active) {
         if (evening) {
           final (vx, vy) =
@@ -1163,6 +1202,10 @@ class GameController extends ChangeNotifier {
           pigeon
             ..x += vx * dt
             ..y += vy * dt;
+        } else if (beach) {
+          pigeon
+            ..x += pigeon.vx * dt
+            ..y += (pigeon.vy + math.sin(time * 2.6) * 1.4) * dt;
         } else {
           pigeon
             ..x += pigeon.vx * dt
