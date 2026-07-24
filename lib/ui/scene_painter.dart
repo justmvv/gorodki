@@ -601,11 +601,13 @@ class ScenePainter extends CustomPainter {
           crack);
     }
 
-    // The dragon: anchored at the windowsill, not the middle of the
-    // glass, so it actually reads as leaning OUT of the opening rather
-    // than being stuck inside it. Leans out further while breathing.
-    final sill = Offset(win.right - 4, win.bottom - win.height * 0.22);
-    final lean = g.dragonBreathing ? 20.0 : 9.0;
+    // The dragon: anchored just past the window FRAME's own outer edge
+    // (not the glass), with enough lean to clear the head's own half
+    // -width — otherwise the resting pose visually overlaps the frame
+    // and reads as "stuck in the window" instead of leaning out of it.
+    // Leans out further still while breathing.
+    final sill = Offset(win.right + 4, win.bottom - win.height * 0.22);
+    final lean = g.dragonBreathing ? 30.0 : 15.0;
     final head = sill.translate(lean, -4);
     final scale = Paint()..color = const Color(0xFF3E6B4A);
     c.drawOval(
@@ -744,12 +746,15 @@ class ScenePainter extends CustomPainter {
 
   /// Beach reskin of the laundry line: a taut volleyball net.
   void _volleyballNet(Canvas c) {
-    // Full-height posts planted in the sand...
+    // Planted at a forward rake, top leaning toward the sea, so the net
+    // reads as standing up perpendicular to the shoreline instead of
+    // looking like a flat band lying parallel to the waves behind it.
+    const rake = 0.32; // meters the top leans, relative to the base
     final poleP = Paint()
       ..color = const Color(0xFFE9E3CE)
       ..strokeWidth = 4;
-    final poleTop1 = _w(World.ropeX1 - 0.15, World.ropeY + 0.55);
-    final poleTop2 = _w(World.ropeX2 + 0.15, World.ropeY + 0.55);
+    final poleTop1 = _w(World.ropeX1 - 0.15 + rake, World.ropeY + 0.55);
+    final poleTop2 = _w(World.ropeX2 + 0.15 + rake, World.ropeY + 0.55);
     final base1 = _w(World.ropeX1 - 0.15, 0);
     final base2 = _w(World.ropeX2 + 0.15, 0);
     c.drawLine(base1, poleTop1, poleP);
@@ -757,12 +762,16 @@ class ScenePainter extends CustomPainter {
 
     // ...but the net itself is only strung at regulation net height (a
     // band around eye level), not floor-to-pole-top. It sways gently —
-    // it's meant to spring, not snag.
+    // it's meant to spring, not snag. The rake carries through the mesh
+    // too, so the whole panel reads as one tilted plane, not a flat
+    // rectangle facing the viewer head-on.
     final sway = math.sin(g.time * 3) * 1.5;
-    final top1 = _w(World.ropeX1 - 0.15, World.ropeY + 0.3);
-    final top2 = _w(World.ropeX2 + 0.15, World.ropeY + 0.3);
-    final bot1 = _w(World.ropeX1 - 0.15, World.ropeY - 0.3).translate(0, sway);
-    final bot2 = _w(World.ropeX2 + 0.15, World.ropeY - 0.3).translate(0, sway);
+    final top1 = _w(World.ropeX1 - 0.15 + rake, World.ropeY + 0.3);
+    final top2 = _w(World.ropeX2 + 0.15 + rake, World.ropeY + 0.3);
+    final bot1 = _w(World.ropeX1 - 0.15 + rake * 0.35, World.ropeY - 0.3)
+        .translate(0, sway);
+    final bot2 = _w(World.ropeX2 + 0.15 + rake * 0.35, World.ropeY - 0.3)
+        .translate(0, sway);
 
     final mesh = Paint()
       ..color = Colors.white.withValues(alpha: 0.6)
@@ -2647,9 +2656,10 @@ class ScenePainter extends CustomPainter {
     c.restore();
   }
 
-  /// The window dragon's actual retaliation: a proper flame beam reaching
-  /// all the way from the broken window to wherever the player is
-  /// standing. World-space, so it works regardless of kon/half-kon.
+  /// The window dragon's actual retaliation: three distinct fireballs,
+  /// lobbed one after another from the broken window at wherever the
+  /// player is standing. World-space, so it works regardless of
+  /// kon/half-kon.
   void _dragonFireBreath(Canvas c) {
     if (!g.dragonBreathing) return;
     // Roughly where the dragon's snout ends up, leaning out of the sill.
@@ -2659,62 +2669,62 @@ class ScenePainter extends CustomPainter {
     final dx = dst.dx - src.dx, dy = dst.dy - src.dy;
     final len = math.sqrt(dx * dx + dy * dy).clamp(1.0, 9999).toDouble();
     final nx = dx / len, ny = dy / len;
-    final px = -ny, py = nx; // perpendicular, for the lateral wobble
+    final px = -ny, py = nx; // perpendicular, for the lob arc
 
-    // A faint, wavy contrail for continuity between the puffs below.
-    final trail = Path();
-    const trailSegs = 24;
-    for (int i = 0; i <= trailSegs; i++) {
-      final t = i / trailSegs;
-      final cx = src.dx + dx * t;
-      final cy = src.dy + dy * t;
-      final wave = math.sin(t * 9 - g.time * 10) * 14 * math.sin(t * math.pi);
-      final p = Offset(cx + px * wave, cy + py * wave);
-      if (i == 0) {
-        trail.moveTo(p.dx, p.dy);
-      } else {
-        trail.lineTo(p.dx, p.dy);
+    const flightDuration = 0.8;
+    const launchGap = 0.32;
+    const impactFade = 0.25;
+    final t = g.dragonBreathT;
+
+    Offset ballPos(double p) {
+      // A gentle lob arc rather than a straight line — this is a
+      // thrown fireball, not a laser.
+      final arc = math.sin(p * math.pi) * 20;
+      return Offset(
+        src.dx + dx * p + px * arc,
+        src.dy + dy * p + py * arc - 12 * math.sin(p * math.pi),
+      );
+    }
+
+    for (int i = 0; i < 3; i++) {
+      final launch = i * launchGap;
+      if (t < launch) continue;
+      final since = t - launch;
+      final p = (since / flightDuration).clamp(0.0, 1.0);
+      final fizzle = since <= flightDuration
+          ? 1.0
+          : (1.0 - (since - flightDuration) / impactFade).clamp(0.0, 1.0);
+      if (fizzle <= 0) continue;
+
+      // A short comet tail trailing behind the fireball.
+      for (int j = 1; j <= 4; j++) {
+        final tp = (p - j * 0.045).clamp(0.0, 1.0);
+        final talpha = (0.4 - j * 0.08) * fizzle;
+        if (talpha <= 0) continue;
+        final pos = ballPos(tp);
+        c.drawCircle(pos, 5.0 - j * 0.7,
+            Paint()..color = Color.fromRGBO(255, 110, 30, talpha));
       }
-    }
-    c.drawPath(
-        trail,
-        Paint()
-          ..color = const Color(0xFFFF7A2E).withValues(alpha: 0.28)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 5
-          ..strokeCap = StrokeCap.round);
 
-    // The flame itself: a stream of puffs actually flying from the
-    // window to the player, snaking side to side as they travel rather
-    // than sitting in a straight rigid line.
-    const puffCount = 10;
-    for (int i = 0; i < puffCount; i++) {
-      final t = (g.time * 2.3 + i / puffCount) % 1.0;
-      final cx = src.dx + dx * t;
-      final cy = src.dy + dy * t;
-      final wave = math.sin(t * 9 - g.time * 10) * 14 * math.sin(t * math.pi);
-      final flutter = math.sin(g.time * 22 + i * 1.7) * 3;
-      final wx = cx + px * (wave + flutter);
-      final wy = cy + py * (wave + flutter);
-      final fade = math.sin(t * math.pi); // fades in near the window, out near impact
-      final size = (5 + 4 * (1 - t)) * (0.75 + 0.35 * math.sin(g.time * 16 + i));
-      final alpha = (0.25 + 0.65 * fade).clamp(0.0, 1.0);
-      c.drawCircle(Offset(wx, wy), size * 1.7,
-          Paint()..color = Color.fromRGBO(255, 90, 30, alpha * 0.3));
-      c.drawCircle(Offset(wx, wy), size,
-          Paint()..color = Color.fromRGBO(255, 140, 40, alpha * 0.75));
-      c.drawCircle(Offset(wx, wy), size * 0.5,
-          Paint()..color = Color.fromRGBO(255, 224, 130, alpha * 0.9));
-    }
+      // The fireball itself: layered outer glow, flame, hot core.
+      final pos = ballPos(p);
+      final wobble = 1.0 + 0.12 * math.sin(g.time * 26 + i * 2.1);
+      c.drawCircle(pos, 13 * wobble * fizzle,
+          Paint()..color = Color.fromRGBO(255, 90, 20, 0.3 * fizzle));
+      c.drawCircle(pos, 8.5 * wobble * fizzle,
+          Paint()..color = Color.fromRGBO(255, 140, 40, 0.85 * fizzle));
+      c.drawCircle(pos, 4.2 * wobble * fizzle,
+          Paint()..color = Color.fromRGBO(255, 224, 130, 0.95 * fizzle));
 
-    // A few sparks drifting free, for good measure.
-    for (int i = 0; i < 5; i++) {
-      final t = (g.time * 1.3 + i * 0.37) % 1.0;
-      final wave = math.sin(t * 9 - g.time * 10) * 14 * math.sin(t * math.pi);
-      final cx = src.dx + dx * t + px * wave + math.sin(g.time * 6 + i) * 6;
-      final cy = src.dy + dy * t + py * wave - 4 + math.sin(g.time * 4 + i) * 4;
-      c.drawCircle(Offset(cx, cy), 2.0 - t * 1.4,
-          Paint()..color = Color.fromRGBO(255, 190, 90, (1 - t) * 0.8));
+      // A few sparks peeling off, for good measure.
+      for (int k = 0; k < 3; k++) {
+        final sparkT = (g.time * 5 + i * 2.1 + k * 1.7) % 1.0;
+        c.drawCircle(
+            pos.translate(math.sin(g.time * 7 + k) * 6 * sparkT,
+                -6 * sparkT - math.cos(g.time * 5 + k) * 3),
+            (2.2 - sparkT * 1.6) * fizzle,
+            Paint()..color = Color.fromRGBO(255, 190, 90, (1 - sparkT) * 0.8 * fizzle));
+      }
     }
   }
 

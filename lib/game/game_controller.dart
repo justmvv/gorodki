@@ -220,6 +220,11 @@ class GameController extends ChangeNotifier {
   /// Mole animation clock for the painter (valid while [moleOut]).
   double get moleT => _eventT;
 
+  /// Dragon-breath animation clock for the painter (valid while
+  /// [dragonBreathing]), so the fireballs can be timed against the
+  /// actual start of the event rather than the ambient clock.
+  double get dragonBreathT => _eventT;
+
   // Window (or, on the beach, the invisible ice-cream kiosk).
   bool windowBroken = false;
   bool _kioskChecked = false; // once per throw, so the beach ding doesn't spam
@@ -425,6 +430,9 @@ class GameController extends ChangeNotifier {
           ..y = 3.7
           ..t = 0
           ..vx = (fromLeft ? 1 : -1) * (1.5 + _rng.nextDouble() * 0.7);
+        // A real paraglider doesn't buzz like a motor — just a light
+        // gust of air as the canopy catches wind.
+        _sfx('whoosh');
       } else {
         drone
           ..active = true
@@ -433,8 +441,8 @@ class GameController extends ChangeNotifier {
           ..y = 9.5
           ..t = 0
           ..vx = 0;
+        _sfx('drone');
       }
-      _sfx('drone');
     }
 
     phase = Phase.flying;
@@ -647,7 +655,7 @@ class GameController extends ChangeNotifier {
       if (ddx * ddx + ddy * ddy < catchR) {
         drone.carrying = true;
         phase = Phase.droneCarry;
-        _sfx('drone');
+        _sfx(beach ? 'whoosh' : 'drone');
         _say(beach ? '🪂' : '🚁',
             beach ? L10n.t.paragliderIntercept : L10n.t.droneIntercept);
         return;
@@ -1859,11 +1867,16 @@ class GameController extends ChangeNotifier {
     _eventT += dt;
     final pin = pins[_crowPin];
     final targetX = World.gorodFront + pin.spec.u + pin.offsetU;
+    // A crow doesn't glide in on rails like a drone — it beats its way
+    // there. A wingbeat-frequency bob plus a slower lateral zigzag on
+    // top of the base easing gives the flight some life.
+    final bob = math.sin(time * 22) * 1.1 * dt;
+    final zigzag = math.sin(time * 7 + 1.3) * 0.8 * dt;
     if (crowStage == 0) {
       // Swoop down to the pin.
       final dy = 1.4 - crowY;
-      crowY += dy * dt * 3;
-      crowX += (targetX - crowX) * dt * 3;
+      crowY += dy * dt * 3 + bob;
+      crowX += (targetX - crowX) * dt * 3 + zigzag;
       if (crowY < 1.6) {
         crowStage = 1;
         _eventT = 0;
@@ -1871,8 +1884,8 @@ class GameController extends ChangeNotifier {
       }
     } else if (crowStage == 1) {
       // Carry it up and across to the drop point.
-      crowY += 2.2 * dt;
-      crowX += ((World.gorodFront + _crowDropU) - crowX) * dt * 1.8;
+      crowY += 2.2 * dt + bob;
+      crowX += ((World.gorodFront + _crowDropU) - crowX) * dt * 1.8 + zigzag;
       if (crowY > 4.0) {
         crowStage = 2;
         _eventT = 0;
@@ -1880,6 +1893,7 @@ class GameController extends ChangeNotifier {
     } else {
       // Drop it — the gorodok lands wherever gravity and spite decide.
       crowY -= 5.5 * dt;
+      crowX += zigzag * 0.5;
       if (crowY <= 1.6) {
         pin
           ..standing = true
