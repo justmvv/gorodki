@@ -136,6 +136,7 @@ class GameController extends ChangeNotifier {
   int _broomThreshold = 3; // 3..6, randomized
   bool drunkardChasing = false;
   double drunkardX = World.benchX + 0.7;
+  bool drunkardFacingRight = false; // true on the stroll back to the bench
 
   // Idle punishment: the pigeon (or bat, or crow) strikes back.
   double idleT = 0;
@@ -322,6 +323,7 @@ class GameController extends ChangeNotifier {
     manholeManUp = false;
     _broomThreshold = 3 + _rng.nextInt(4);
     drunkardChasing = false;
+    drunkardFacingRight = false;
     playerSoiled = false;
     fruitFlying = false;
     _fruitThrown = false;
@@ -964,6 +966,12 @@ class GameController extends ChangeNotifier {
         (bat.x - World.bottleX).abs() < World.bottleR + 0.25 &&
         bat.y < World.bottleH + 0.2) {
       _hitBottle();
+      // _hitBottle() can trigger the broom chase, which switches `phase`
+      // away from `flying`. If we don't bail out here, the ground/bounds
+      // checks below can run one more time on the now-inactive bat and
+      // stomp `phase` back to `settling` — which leaves drunkardChasing
+      // stuck true with drunkardX frozen forever (Gena "moves in place").
+      if (phase != Phase.flying) return;
     }
 
     // --- Right building / the window (or its stand-ins) -------------------
@@ -1489,6 +1497,7 @@ class GameController extends ChangeNotifier {
   void _startBroomChase() {
     phase = Phase.broomChase;
     drunkardChasing = true;
+    drunkardFacingRight = false;
     _eventT = 0;
     bat.active = false;
     throwsTotal++; // penalty throw
@@ -1510,10 +1519,12 @@ class GameController extends ChangeNotifier {
       }
     } else if (_eventT < 3.6) {
       playerRunOffset -= dt * 4;
-      // Point made; he strolls back to the bench.
+      // Point made; he turns around and strolls back to the bench.
+      drunkardFacingRight = true;
       drunkardX += (World.benchX + 0.7 - drunkardX) * dt * 2;
     } else {
       drunkardChasing = false;
+      drunkardFacingRight = false;
       playerFleeing = false;
       playerRunOffset = 0;
       drunkardX = World.benchX + 0.7;

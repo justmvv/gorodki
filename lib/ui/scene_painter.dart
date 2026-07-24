@@ -1547,22 +1547,37 @@ class ScenePainter extends CustomPainter {
           : g.beach
               ? const Color(0xFFD8543C)
               : const Color(0xFF6E7B65);
-    final run = math.sin(g.time * 16) * 6;
+    // Alternating gait (front leg forward while the other trails back),
+    // plus a small body bounce — matches the _dog/_bear running style so
+    // the advance and the stroll-back read as actual locomotion instead
+    // of twitching in place.
+    final strideA = math.sin(g.time * 16) * 9;
+    final strideB = math.sin(g.time * 16 + math.pi) * 9;
+    final bounce = math.sin(g.time * 16).abs() * -3;
+
+    c.save();
+    if (g.drunkardFacingRight) {
+      // Mirror around Gena's position, same trick as _dog/_bear: he
+      // genuinely turns around and struts back toward the bench.
+      c.translate(o.dx * 2, 0);
+      c.scale(-1, 1);
+    }
 
     // Legs, moving with unexpected athleticism.
     final leg = Paint()
       ..color = const Color(0xFF4C4C46)
       ..strokeWidth = 7;
-    c.drawLine(Offset(o.dx, o.dy - 32), Offset(o.dx - 7 - run, o.dy), leg);
-    c.drawLine(Offset(o.dx, o.dy - 32), Offset(o.dx + 7 + run, o.dy), leg);
+    c.drawLine(Offset(o.dx, o.dy - 32 + bounce), Offset(o.dx - 7 + strideA, o.dy), leg);
+    c.drawLine(Offset(o.dx, o.dy - 32 + bounce), Offset(o.dx + 7 + strideB, o.dy), leg);
     // Torso.
     c.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(o.dx - 11, o.dy - 60, 22, 30),
+        RRect.fromRectAndRadius(
+            Rect.fromLTWH(o.dx - 11, o.dy - 60 + bounce, 22, 30),
             const Radius.circular(6)),
         coat);
     // Head + ushanka (sunglasses on the beach; horns punch straight
     // through the ushanka in the nightmare yard).
-    final head = Offset(o.dx, o.dy - 68);
+    final head = Offset(o.dx, o.dy - 68 + bounce);
     c.drawCircle(head, 9, skin);
     if (g.beach) {
       final shade = Paint()..color = const Color(0xFF2A2830);
@@ -1596,8 +1611,8 @@ class ScenePainter extends CustomPainter {
     final arm = Paint()
       ..color = coat.color
       ..strokeWidth = 6;
-    final hand = Offset(o.dx - 16, o.dy - 74 + run * 0.5);
-    c.drawLine(Offset(o.dx - 8, o.dy - 54), hand, arm);
+    final hand = Offset(o.dx - 16, o.dy - 74 + bounce + strideA * 0.5);
+    c.drawLine(Offset(o.dx - 8, o.dy - 54 + bounce), hand, arm);
     if (g.beach) {
       // A flip-flop, brandished with real intent.
       final sandal = Paint()..color = const Color(0xFF3E9A5B);
@@ -1634,15 +1649,23 @@ class ScenePainter extends CustomPainter {
         c.drawLine(tip, tip.translate(-10 + i * 2.0, -12 + i * 3.0), bristle);
       }
     }
+    c.restore();
 
-    final tp = TextPainter(
-      text: const TextSpan(
-          text: 'ENOUGH!!',
-          style: TextStyle(
-              color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(c, head.translate(-24, -30));
+    // Comic-strip "ENOUGH!!" — only while actually advancing on the
+    // player (drawn outside the mirrored canvas so it never flips, same
+    // convention as the dog's "WOOF!!").
+    if (!g.drunkardFacingRight) {
+      final tp = TextPainter(
+        text: const TextSpan(
+            text: 'ENOUGH!!',
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w900)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(c, head.translate(-24, -30));
+    }
   }
 
   // ----------------------------------------------------------------
