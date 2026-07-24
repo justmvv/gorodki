@@ -26,6 +26,7 @@ class _GameScreenState extends State<GameScreen>
   Offset? _dragStart;
   final FocusNode _cheatFocus = FocusNode();
   bool _cheatK = false; // K pressed, waiting for U
+  int _musicLevel = 1;
 
   @override
   void initState() {
@@ -33,6 +34,7 @@ class _GameScreenState extends State<GameScreen>
     audio = AudioManager();
     game = GameController();
     game.onSound = audio.playSfx;
+    game.addListener(_onGameChanged);
     _ticker = createTicker((elapsed) {
       final dt = (_last == Duration.zero)
           ? 0.016
@@ -43,9 +45,19 @@ class _GameScreenState extends State<GameScreen>
       ..start();
   }
 
+  // Swaps the background track whenever the level changes (each level
+  // has its own arrangement of the same theme).
+  void _onGameChanged() {
+    if (game.level != _musicLevel) {
+      _musicLevel = game.level;
+      audio.setLevel(_musicLevel);
+    }
+  }
+
   @override
   void dispose() {
     _ticker.dispose();
+    game.removeListener(_onGameChanged);
     game.dispose();
     audio.dispose();
     _cheatFocus.dispose();

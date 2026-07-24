@@ -130,9 +130,11 @@ All audio is genuine home-grown 8-bit, synthesized programmatically
 
 * **Sound effects** (whoosh, wooden knock, bark, glass, splash, clink,
   boing, coo, fanfares) — on by default, toggle with the 🔊 button.
-* **Music** — a chiptune arrangement of the folk song
-  *"Akh, Samara-gorodok"*, looped. **Off by default**, toggle with the
-  ♪ button.
+* **Music** — the folk song *"Akh, Samara-gorodok"*, looped, with a
+  different arrangement of the same theme per level: chiptune (level
+  1), jazz (level 2), upbeat icy winter (level 3), hellish heavy rock
+  (level 4), relaxed blues (level 5). **Off by default**, toggle with
+  the ♪ button.
 
 ## Controls
 
