@@ -66,6 +66,7 @@ class ScenePainter extends CustomPainter {
     _bat(canvas);
     _pigeon(canvas);
     _fruit(canvas);
+    if (g.beach) _coconut(canvas);
     _drone(canvas);
     _splash(canvas);
     _eveningLight(canvas, size);
@@ -288,20 +289,23 @@ class ScenePainter extends CustomPainter {
             height: 34),
         duneP);
 
-    _palm(c, _w(0.9, 0));
+    // The palm nearest the player stands unnaturally, suspiciously tall —
+    // plenty of drop height for what's coming.
+    _palm(c, _w(0.9, 0), height: 150);
     _palm(c, _w(21.6, 0));
   }
 
-  void _palm(Canvas c, Offset base) {
+  void _palm(Canvas c, Offset base, {double height = 92}) {
     final trunk = Paint()
       ..color = const Color(0xFF8A6B3F)
       ..strokeWidth = 7
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
     final lean = math.sin(g.time * 0.4) * 3;
-    final top = Offset(base.dx + 14 + lean, base.dy - 92);
+    final top = Offset(base.dx + 14 + lean, base.dy - height);
     final trunkPath = Path()..moveTo(base.dx, base.dy);
-    trunkPath.quadraticBezierTo(base.dx + 6, base.dy - 50, top.dx, top.dy);
+    trunkPath.quadraticBezierTo(
+        base.dx + 6, base.dy - height * 0.54, top.dx, top.dy);
     c.drawPath(trunkPath, trunk);
     final leaf = Paint()..color = const Color(0xFF4E8A4A);
     for (int i = 0; i < 5; i++) {
@@ -1757,6 +1761,22 @@ class ScenePainter extends CustomPainter {
       }
     }
 
+    // A coconut just happened. Small consolation stars, no crawling
+    // required — this one's mostly just embarrassing.
+    if (g.coconutDazed) {
+      final tp = TextPainter(
+        text: TextSpan(
+          text: '✶ ✶',
+          style: TextStyle(
+              color: const Color(0xFFFFE082),
+              fontSize: 13 + math.sin(g.time * 9) * 2,
+              fontWeight: FontWeight.w900),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(c, head.translate(-16, -30 + math.sin(g.time * 20) * 1.5));
+    }
+
     // Arms.
     final arm = Paint()
       ..color = shirt.color
@@ -2077,8 +2097,8 @@ class ScenePainter extends CustomPainter {
           crumb);
     }
 
-    // The mole itself (a crab claw on the beach, a bony hand in the
-    // nightmare yard — same rig, different occupant).
+    // The mole itself (sandy brown on the beach, a proper hellbeast in
+    // the nightmare yard — same rig, considerably different disposition).
     final body = Paint()
       ..color = g.beach
           ? const Color(0xFFC98A4B)
@@ -2094,15 +2114,43 @@ class ScenePainter extends CustomPainter {
             height: rise + 0.06 * k),
         body);
     c.drawCircle(head, 0.13 * k, body);
-    // Pink nose, wiggling.
-    c.drawCircle(head.translate(math.sin(t * 14) * 1.5, -0.1 * k), 3.5,
-        Paint()..color = const Color(0xFFE8A0A8));
-    // Squinty eyes (moles famously skipped the eye exam).
-    final eye = Paint()
-      ..color = Colors.black87
-      ..strokeWidth = 1.6;
-    c.drawLine(head.translate(-6, -4), head.translate(-2, -3), eye);
-    c.drawLine(head.translate(6, -4), head.translate(2, -3), eye);
+    if (g.nightmare) {
+      // Not a nose anymore: a small jet of flame, straight from the
+      // mouth. Moles in the nightmare yard have given up on subtlety.
+      final flick = math.sin(t * 16) * 1.6;
+      final base = head.translate(math.sin(t * 14) * 1.2, -0.02 * k);
+      final flameH = 9 + math.sin(t * 11) * 2.5;
+      final flame = Path()
+        ..moveTo(base.dx, base.dy)
+        ..quadraticBezierTo(base.dx - 4 + flick, base.dy - flameH * 0.5,
+            base.dx + flick * 0.5, base.dy - flameH)
+        ..quadraticBezierTo(
+            base.dx + 4 + flick, base.dy - flameH * 0.5, base.dx, base.dy)
+        ..close();
+      c.drawPath(flame, Paint()..color = const Color(0xFFE8622E).withValues(alpha: 0.85));
+      c.drawCircle(base.translate(0, -flameH * 0.45), 2,
+          Paint()..color = const Color(0xFFFFD873));
+    } else {
+      // Pink nose, wiggling.
+      c.drawCircle(head.translate(math.sin(t * 14) * 1.5, -0.1 * k), 3.5,
+          Paint()..color = const Color(0xFFE8A0A8));
+    }
+    // Squinty eyes (moles famously skipped the eye exam) — or, in the
+    // nightmare yard, a pair of small burning coals that skipped a lot
+    // more than that.
+    if (g.nightmare) {
+      for (final dx in [-4.0, 4.0]) {
+        final ex = head.translate(dx, -3.5);
+        c.drawCircle(ex, 3, Paint()..color = const Color(0x55FF3B30));
+        c.drawCircle(ex, 1.5, Paint()..color = const Color(0xFFFF3B30));
+      }
+    } else {
+      final eye = Paint()
+        ..color = Colors.black87
+        ..strokeWidth = 1.6;
+      c.drawLine(head.translate(-6, -4), head.translate(-2, -3), eye);
+      c.drawLine(head.translate(6, -4), head.translate(2, -3), eye);
+    }
     // Digging paws.
     final paw = Paint()..color = const Color(0xFFB9A0BC);
     c.drawCircle(head.translate(-0.11 * k, 0.06 * k + math.sin(t * 12) * 2), 4, paw);
@@ -2434,6 +2482,26 @@ class ScenePainter extends CustomPainter {
         Paint()
           ..color = const Color(0xFF5A3E24)
           ..strokeWidth = 1.5);
+    c.restore();
+  }
+
+  /// The coconut, falling from the suspiciously tall palm — a straight,
+  /// unglamorous drop, tumbling as it goes.
+  void _coconut(Canvas c) {
+    if (!g.coconutFalling) return;
+    final o = _w(g.coconutX, g.coconutY);
+    c.save();
+    c.translate(o.dx, o.dy);
+    c.rotate(g.time * 9);
+    c.drawCircle(Offset.zero, 6.5, Paint()..color = const Color(0xFF5A3E24));
+    c.drawCircle(const Offset(-1.5, -1.5), 2.4,
+        Paint()..color = const Color(0xFF7A5A38));
+    // The three little "face" marks every coconut is contractually
+    // obligated to have.
+    final face = Paint()..color = const Color(0xFF2A1E14);
+    c.drawCircle(const Offset(-2, 1), 0.9, face);
+    c.drawCircle(const Offset(2, 1), 0.9, face);
+    c.drawCircle(const Offset(0, 3.5), 1.0, face);
     c.restore();
   }
 
@@ -3015,14 +3083,40 @@ class ScenePainter extends CustomPainter {
   /// The roof avalanche: only the player's head sticks out.
   void _avalanche(Canvas c, Size s) {
     final o = _w(g.playerX, 0);
-    // The falling chunk itself, before it lands.
-    if (g.snowChunkY > 0.3) {
-      final chunk = _w(g.playerX + 0.6, g.snowChunkY);
-      c.drawRRect(
-          RRect.fromRectAndRadius(
-              Rect.fromCenter(center: chunk, width: 50, height: 40),
-              const Radius.circular(10)),
-          Paint()..color = const Color(0xFFF3F8FC));
+    // A proper cascade — many staggered streams of snow pouring down
+    // together like a waterfall off the roof, rather than one rigid
+    // parcel dropping on a string.
+    if (g.snowChunkY > 0.2) {
+      final topY = _w(g.playerX, 8.5).dy;
+      final landY = o.dy - 18;
+      final progress = ((8.5 - g.snowChunkY) / 8.5).clamp(0.0, 1.0);
+      final snowP = Paint()..color = const Color(0xFFF3F8FC);
+      final snowP2 = Paint()..color = const Color(0xFFDCE9F2);
+      for (int i = 0; i < 16; i++) {
+        final seed = i * 12.9898;
+        final xJitter = math.sin(seed) * 26;
+        final speed = 0.8 + 0.5 * ((math.sin(seed * 1.7) + 1) / 2);
+        final startDelay = (i / 16) * 0.5;
+        final localT = ((progress - startDelay) * speed).clamp(0.0, 1.0);
+        if (localT <= 0) continue;
+        final y = topY + (landY - topY) * localT;
+        final sway = math.sin(g.time * 7 + seed) * 4;
+        final clumpSize = 9 + 7 * ((math.sin(seed * 2.3) + 1) / 2);
+        c.drawOval(
+            Rect.fromCenter(
+                center: Offset(o.dx + xJitter + sway, y),
+                width: clumpSize,
+                height: clumpSize * 0.75),
+            i.isEven ? snowP : snowP2);
+      }
+      // A hazy falling curtain, for a bit of waterfall density behind the
+      // individual clumps.
+      final curtainH = (landY - topY) * progress;
+      if (curtainH > 0) {
+        c.drawRect(
+            Rect.fromLTWH(o.dx - 34, topY, 68, curtainH),
+            Paint()..color = Colors.white.withValues(alpha: 0.10));
+      }
     }
     // The mound, with just the head peeking out.
     c.drawOval(

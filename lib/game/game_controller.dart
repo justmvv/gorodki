@@ -24,6 +24,7 @@ enum Phase {
   crowSteal, // the crow relocates one of your pins (level 3)
   snowBury, // roof avalanche: only the head sticks out — level lost (level 3)
   sledCarry, // a kid on a sled has made off with the bat (level 3)
+  coconutBonk, // a coconut has fallen from the palm tree (level 5)
   cooldown, // short pause before the next throw / figure
   gameOver,
 }
@@ -191,6 +192,12 @@ class GameController extends ChangeNotifier {
   double moleU = 1.0; // position across the gorod (0..2)
   bool _moleScattered = false;
 
+  // The coconut, an unprovoked hazard of the beach's newly-taller palm.
+  bool coconutFalling = false;
+  bool coconutDazed = false;
+  double coconutX = 0, coconutY = 0;
+  double _coconutDazedT = 0;
+
   /// Mole animation clock for the painter (valid while [moleOut]).
   double get moleT => _eventT;
 
@@ -283,6 +290,8 @@ class GameController extends ChangeNotifier {
     sledHasBat = false;
     playerBuried = false;
     bat.inTree = false;
+    coconutFalling = false;
+    coconutDazed = false;
     _setupFigure();
     _startPreview();
     _say('🏏',
@@ -487,6 +496,8 @@ class GameController extends ChangeNotifier {
         }
       case Phase.sledCarry:
         _tickSledCarry(dt);
+      case Phase.coconutBonk:
+        _tickCoconutBonk(dt);
       case Phase.crowSteal:
         _tickCrowSteal(dt);
       case Phase.snowBury:
@@ -1449,6 +1460,8 @@ class GameController extends ChangeNotifier {
         pigeon.active = false;
         drone.active = false;
         moleOut = false;
+        coconutFalling = false;
+        coconutDazed = false;
         _setupFigure();
         _sfx('fanfare');
         _say('🏖️', L10n.t.level5Intro, ttl: 6);
@@ -1512,6 +1525,12 @@ class GameController extends ChangeNotifier {
         return;
       }
     }
+    // The beach's palm tree, being taller than it has any business being,
+    // occasionally drops a coconut squarely on the player.
+    if (beach && !coconutFalling && !coconutDazed && _rng.nextDouble() < 0.08) {
+      _startCoconutBonk();
+      return;
+    }
     // The spider, rarely, decides the space between the lamps needs
     // decorating. She only bothers if there isn't already a web up.
     if (evening &&
@@ -1552,6 +1571,34 @@ class GameController extends ChangeNotifier {
       manholeManUp = false;
       _setupFigure();
       _startPreview();
+    }
+  }
+
+  void _startCoconutBonk() {
+    phase = Phase.coconutBonk;
+    coconutFalling = true;
+    coconutDazed = false;
+    coconutX = playerX + 0.15;
+    coconutY = 6.0;
+    _sfx('rumble');
+  }
+
+  void _tickCoconutBonk(double dt) {
+    if (coconutFalling) {
+      coconutY -= 8.5 * dt;
+      if (coconutY <= 1.75) {
+        coconutFalling = false;
+        coconutDazed = true;
+        _coconutDazedT = 0;
+        _sfx('knock');
+        _say('🥥', L10n.t.coconutMsg, ttl: 3.5);
+      }
+    } else if (coconutDazed) {
+      _coconutDazedT += dt;
+      if (_coconutDazedT > 1.6) {
+        coconutDazed = false;
+        phase = Phase.aiming;
+      }
     }
   }
 

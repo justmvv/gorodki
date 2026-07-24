@@ -89,7 +89,8 @@ class GameStrings {
       moleMsgBeach,
       ravenSteal,
       seagullSteal,
-      paragliderIntercept;
+      paragliderIntercept,
+      coconutMsg;
   final List<String> missLines, bottleLines, snowmanLines;
 
   const GameStrings({
@@ -179,6 +180,7 @@ class GameStrings {
     required this.ravenSteal,
     required this.seagullSteal,
     required this.paragliderIntercept,
+    required this.coconutMsg,
     required this.missLines,
     required this.bottleLines,
     required this.snowmanLines,
@@ -320,6 +322,8 @@ const en = GameStrings(
       'A seagull has claimed your bat for the flock. It has done this exact maneuver before.',
   paragliderIntercept:
       'A paraglider swoops low and snags your bat mid-air! "Sorry, mate, thermal\'s calling!"',
+  coconutMsg:
+      'THOCK! A coconut, dropped by that suspiciously tall palm tree, lands square on your head. You see stars, and possibly a lawyer.',
   snowmanLines: [
     'The snowman lost his bucket. He is above such things.',
     'The snowman is now a third shorter. The carrot remains optimistic.',
@@ -471,6 +475,8 @@ const de = GameStrings(
       'Eine Möwe hat dein Schlagholz für den Schwarm beschlagnahmt. Dieses Manöver hat sie eindeutig schon geübt.',
   paragliderIntercept:
       'Ein Gleitschirmflieger saust tief herab und schnappt sich dein Schlagholz mitten in der Luft! "Sorry, die Thermik ruft!"',
+  coconutMsg:
+      'PLONK! Eine Kokosnuss von dieser verdächtig hohen Palme landet mitten auf deinem Kopf. Du siehst Sterne, und womöglich einen Anwalt.',
   snowmanLines: [
     'Der Schneemann hat seinen Eimer verloren. Er steht über solchen Dingen.',
     'Der Schneemann ist jetzt ein Drittel kürzer. Die Karotte bleibt optimistisch.',
@@ -623,6 +629,8 @@ const es = GameStrings(
       'Una gaviota ha reclamado tu bate para la bandada. Claramente ya ha hecho esta maniobra antes.',
   paragliderIntercept:
       '¡Un parapente baja en picado y atrapa tu bate en pleno vuelo! "¡Perdona, me llama el térmico!"',
+  coconutMsg:
+      '¡PLAF! Un coco de esa palmera sospechosamente alta te cae justo en la cabeza. Ves estrellas, y posiblemente a un abogado.',
   snowmanLines: [
     'El muñeco de nieve perdió su cubo. Está por encima de esas cosas.',
     'El muñeco de nieve es ahora un tercio más bajo. La zanahoria sigue optimista.',
@@ -774,6 +782,8 @@ const nl = GameStrings(
       'Een meeuw heeft je knuppel opgeëist voor de zwerm. Dit trucje heeft ze duidelijk al eerder gedaan.',
   paragliderIntercept:
       'Een parapente duikt laag over en grist je knuppel zo uit de lucht! "Sorry hoor, de thermiek roept!"',
+  coconutMsg:
+      'PLOF! Een kokosnoot van die verdacht hoge palmboom komt recht op je hoofd terecht. Je ziet sterretjes, en mogelijk een advocaat.',
   snowmanLines: [
     'De sneeuwpop is zijn emmer kwijt. Hij staat boven zulke dingen.',
     'De sneeuwpop is nu een derde korter. De wortel blijft optimistisch.',
