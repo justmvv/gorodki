@@ -220,8 +220,9 @@ class GameController extends ChangeNotifier {
   /// Mole animation clock for the painter (valid while [moleOut]).
   double get moleT => _eventT;
 
-  // Window.
+  // Window (or, on the beach, the invisible ice-cream kiosk).
   bool windowBroken = false;
+  bool _kioskChecked = false; // once per throw, so the beach ding doesn't spam
 
   // Laundry snag flag per throw.
   bool _ropeChecked = false;
@@ -364,6 +365,7 @@ class GameController extends ChangeNotifier {
     _treeChecked = false;
     _webChecked = false;
     _iceSaid = false;
+    _kioskChecked = false;
 
     // Wind: 10% on the daytime yard, 20% in the evening, a brutal 40% in
     // winter, a nightmarish 80% in the nightmare yard, and a merciless
@@ -890,27 +892,42 @@ class GameController extends ChangeNotifier {
     // --- Right building / the window (or its stand-ins) -------------------
     if (bat.x >= World.buildingRX) {
       _throwHadContact = true;
+      if (beach) {
+        // There's no actual building on the beach — the kiosk is just an
+        // off-screen idea. So the bat doesn't bounce off an invisible
+        // wall: it sails on past the edge of the field, dings, and the
+        // kiosk complains from off-screen. Checked once per throw so it
+        // doesn't spam every frame while the bat flies off.
+        if (!_kioskChecked) {
+          _kioskChecked = true;
+          _sfx('clink'); // the "дзинь"
+          if (!windowBroken) {
+            windowBroken = true;
+            throwsTotal++; // penalty throw
+            _say('🍦', L10n.t.beachKioskCrash);
+          } else {
+            _say('🍦', L10n.t.beachKioskAgain);
+          }
+        }
+        return;
+      }
       if (bat.y > World.windowY1 && bat.y < World.windowY2) {
         if (!windowBroken) {
           windowBroken = true;
           throwsTotal++; // penalty throw
           _sfx('glass');
-          _say('🪟', nightmare
-              ? L10n.t.nightmareWindowCrash
-              : (beach ? L10n.t.beachKioskCrash : L10n.t.windowCrash));
+          _say('🪟', nightmare ? L10n.t.nightmareWindowCrash : L10n.t.windowCrash);
           if (nightmare) {
             _startDragonBreath();
             return;
           }
         } else {
           _sfx('knock');
-          _say('🪟', nightmare
-              ? L10n.t.nightmareWindowAgain
-              : (beach ? L10n.t.beachKioskAgain : L10n.t.windowAgain));
+          _say('🪟', nightmare ? L10n.t.nightmareWindowAgain : L10n.t.windowAgain);
         }
       } else {
         _sfx('knock');
-        _say('🧱', beach ? L10n.t.beachThud : L10n.t.buildingThud);
+        _say('🧱', L10n.t.buildingThud);
       }
       bat.x = World.buildingRX - 0.1;
       bat.vx = -1.5;
@@ -1691,8 +1708,14 @@ class GameController extends ChangeNotifier {
       }
     }
     // The beach's palm tree, being taller than it has any business being,
-    // occasionally drops a coconut squarely on the player.
-    if (beach && !coconutFalling && !coconutDazed && _rng.nextDouble() < 0.08) {
+    // occasionally drops a coconut — but only when the player is actually
+    // standing under it (i.e. throwing from the kon, near the corner).
+    // It should never seem to fall out of open sky.
+    if (beach &&
+        !coconutFalling &&
+        !coconutDazed &&
+        (playerX - World.nearPalmX).abs() < 2.0 &&
+        _rng.nextDouble() < 0.08) {
       _startCoconutBonk();
       return;
     }
@@ -1746,7 +1769,9 @@ class GameController extends ChangeNotifier {
     phase = Phase.coconutBonk;
     coconutFalling = true;
     coconutDazed = false;
-    coconutX = playerX + 0.15;
+    // Always drops from the palm itself, never from open sky — it just
+    // drifts toward the player on the way down (see _tickCoconutBonk).
+    coconutX = World.nearPalmX + 0.25;
     coconutY = 6.0;
     _sfx('rumble');
   }
@@ -1754,6 +1779,11 @@ class GameController extends ChangeNotifier {
   void _tickCoconutBonk(double dt) {
     if (coconutFalling) {
       coconutY -= 8.5 * dt;
+      // Drifts from the palm toward the player as it falls, so it
+      // visibly originates from the tree but still lands on target.
+      final fallT = ((6.0 - coconutY) / (6.0 - 1.75)).clamp(0.0, 1.0);
+      coconutX = (World.nearPalmX + 0.25) +
+          (playerX - (World.nearPalmX + 0.25)) * fallT;
       if (coconutY <= 1.75) {
         coconutFalling = false;
         coconutDazed = true;

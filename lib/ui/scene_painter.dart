@@ -295,7 +295,7 @@ class ScenePainter extends CustomPainter {
 
     // The palm nearest the player stands unnaturally, suspiciously tall —
     // plenty of drop height for what's coming.
-    _palm(c, _w(0.9, 0), height: 150);
+    _palm(c, _w(World.nearPalmX, 0), height: 150);
     _palm(c, _w(21.6, 0));
   }
 

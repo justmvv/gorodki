@@ -94,4 +94,9 @@ class World {
   static const double snowdriftX = 19.9; // center
   static const double snowdriftW = 1.5;
   static const double snowdriftH = 0.95;
+
+  // --- Level 5: the beach -----------------------------------------------
+  // The unnaturally tall palm right by the player, in the corner — the
+  // only place coconuts are allowed to fall from.
+  static const double nearPalmX = 0.9;
 }
