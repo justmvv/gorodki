@@ -89,4 +89,9 @@ class World {
   // A deep, philosophical puddle (frozen solid in winter).
   static const double puddleX1 = 13.6;
   static const double puddleX2 = 14.3;
+
+  // A huge snowdrift in the right corner. Something is living in there.
+  static const double snowdriftX = 19.9; // center
+  static const double snowdriftW = 1.5;
+  static const double snowdriftH = 0.95;
 }

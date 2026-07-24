@@ -52,6 +52,7 @@ class ScenePainter extends CustomPainter {
       _yolka(canvas);
       _snowmanProp(canvas);
       _sledProp(canvas);
+      _snowdriftProp(canvas);
     } else {
       // Level 1, the nightmare yard, and the beach all share this hazard
       // set (laundry line, kennel, bench) — each function reskins itself
@@ -2285,40 +2286,59 @@ class ScenePainter extends CustomPainter {
     if (!g.drone.active) return;
     final o = _w(g.drone.x, g.drone.y);
     final sway = math.sin(g.time * 2.2) * 4;
-    final canopyC = o.translate(sway, -20);
+    // Bigger canopy, and it banks visibly into its direction of travel —
+    // a real glider commits to a heading instead of hovering in place.
+    const scale = 1.45;
+    final heading = g.drone.vx.sign; // -1 left, +1 right, 0 while carrying
+    final bank = heading * 0.08 +
+        math.sin(g.drone.t * 0.8) * 0.05; // gentle roll from the thermals
+    final canopyC = o.translate(sway, -20 * scale);
+
+    c.save();
+    c.translate(canopyC.dx, canopyC.dy);
+    c.rotate(bank);
+    c.translate(-canopyC.dx, -canopyC.dy);
 
     final canopy = Path()
-      ..moveTo(canopyC.dx - 32, canopyC.dy)
-      ..quadraticBezierTo(canopyC.dx, canopyC.dy - 13, canopyC.dx + 32, canopyC.dy)
-      ..quadraticBezierTo(canopyC.dx, canopyC.dy - 5, canopyC.dx - 32, canopyC.dy)
+      ..moveTo(canopyC.dx - 32 * scale, canopyC.dy)
+      ..quadraticBezierTo(canopyC.dx, canopyC.dy - 13 * scale,
+          canopyC.dx + 32 * scale, canopyC.dy)
+      ..quadraticBezierTo(
+          canopyC.dx, canopyC.dy - 5 * scale, canopyC.dx - 32 * scale, canopyC.dy)
       ..close();
     c.drawPath(canopy, Paint()..color = const Color(0xFFE85B4B));
     final panel = Path()
-      ..moveTo(canopyC.dx - 11, canopyC.dy - 1)
-      ..quadraticBezierTo(canopyC.dx, canopyC.dy - 12, canopyC.dx + 11, canopyC.dy - 1)
-      ..quadraticBezierTo(canopyC.dx, canopyC.dy - 5, canopyC.dx - 11, canopyC.dy - 1)
+      ..moveTo(canopyC.dx - 11 * scale, canopyC.dy - 1 * scale)
+      ..quadraticBezierTo(canopyC.dx, canopyC.dy - 12 * scale,
+          canopyC.dx + 11 * scale, canopyC.dy - 1 * scale)
+      ..quadraticBezierTo(canopyC.dx, canopyC.dy - 5 * scale,
+          canopyC.dx - 11 * scale, canopyC.dy - 1 * scale)
       ..close();
     c.drawPath(panel, Paint()..color = const Color(0xFFF2CE7E));
+    c.restore();
 
-    final pilot = o.translate(sway * 0.35, 6);
+    final pilot = o.translate(sway * 0.35, 6 * scale);
     final lineP = Paint()
       ..color = const Color(0xFF2A2830)
       ..strokeWidth = 1;
-    c.drawLine(canopyC.translate(-28, 0), pilot.translate(-4, -4), lineP);
-    c.drawLine(canopyC.translate(28, 0), pilot.translate(4, -4), lineP);
+    c.drawLine(canopyC.translate(-28 * scale, 0), pilot.translate(-4, -4), lineP);
+    c.drawLine(canopyC.translate(28 * scale, 0), pilot.translate(4, -4), lineP);
     c.drawLine(canopyC.translate(0, -3), pilot, lineP);
 
     // The pilot, dangling in a harness, thrilled about all this.
-    c.drawCircle(pilot, 5, Paint()..color = const Color(0xFFE0B48C));
+    c.drawCircle(pilot, 5 * scale, Paint()..color = const Color(0xFFE0B48C));
     c.drawRRect(
         RRect.fromRectAndRadius(
-            Rect.fromCenter(center: pilot.translate(0, 8), width: 8, height: 10),
-            const Radius.circular(3)),
+            Rect.fromCenter(
+                center: pilot.translate(0, 8 * scale),
+                width: 8 * scale,
+                height: 10 * scale),
+            Radius.circular(3 * scale)),
         Paint()..color = const Color(0xFF2FA0A8));
 
     // Winch cable down to the confiscated bat.
     if (g.drone.carrying) {
-      c.drawLine(pilot.translate(0, 13), _w(g.bat.x, g.bat.y),
+      c.drawLine(pilot.translate(0, 13 * scale), _w(g.bat.x, g.bat.y),
           Paint()
             ..color = const Color(0xFF2A2830)
             ..strokeWidth = 1.4);
@@ -3281,6 +3301,115 @@ class ScenePainter extends CustomPainter {
         c.drawLine(center.translate(-d * 0.4, 0), center.translate(-d, -6), twig);
         c.drawLine(center.translate(d * 0.4, 0), center.translate(d, -6), twig);
       }
+    }
+  }
+
+  /// The huge, suspiciously occupied snowdrift in the corner.
+  void _snowdriftProp(Canvas c) {
+    final o = _w(World.snowdriftX, 0);
+    final w = World.snowdriftW * _scale;
+    final h = World.snowdriftH * _scale;
+    final snow = Paint()..color = const Color(0xFFF3F8FC);
+    final shade = Paint()..color = const Color(0xFFDCE9F2);
+
+    // A big lumpy mound — not the tidy geometric kind.
+    c.drawOval(
+        Rect.fromCenter(
+            center: o.translate(0, -h * 0.32), width: w, height: h),
+        snow);
+    c.drawOval(
+        Rect.fromCenter(
+            center: o.translate(-w * 0.16, -h * 0.58),
+            width: w * 0.55,
+            height: h * 0.6),
+        snow);
+    c.drawOval(
+        Rect.fromCenter(
+            center: o.translate(w * 0.14, -h * 0.5),
+            width: w * 0.4,
+            height: h * 0.45),
+        snow);
+    c.drawOval(
+        Rect.fromCenter(
+            center: o.translate(w * 0.12, -h * 0.16),
+            width: w * 0.5,
+            height: h * 0.28),
+        shade);
+
+    if (g.bearOut) {
+      _bear(c, g.bearX, running: true, facingRight: g.bearFacingRight);
+    } else if (g.snowdriftHits > 0) {
+      // A suspicious dark snout, barely poking out.
+      final peek = o.translate(-w * 0.05, -h * 0.55);
+      c.drawCircle(peek, w * 0.05, Paint()..color = const Color(0xFF4A3322));
+      c.drawCircle(peek.translate(-w * 0.045, -h * 0.02), 2,
+          Paint()..color = const Color(0xFFFF3B30));
+    }
+  }
+
+  void _bear(Canvas c, double x,
+      {bool running = false, bool facingRight = false}) {
+    final o = _w(x, 0);
+    final k = _scale;
+    final body = Paint()..color = const Color(0xFF6B4A2E);
+    final dark = Paint()..color = const Color(0xFF5A3A22);
+    final bounce = running ? math.sin(g.time * 14) * 3 : 0.0;
+
+    c.save();
+    if (facingRight) {
+      c.translate(o.dx * 2, 0);
+      c.scale(-1, 1);
+    }
+
+    // A big, unmistakably large body — this is not Barbos.
+    c.drawOval(
+        Rect.fromCenter(
+            center: Offset(o.dx, o.dy - 0.44 * k + bounce),
+            width: 0.9 * k,
+            height: 0.5 * k),
+        body);
+    // Head.
+    final head = Offset(o.dx - 0.44 * k, o.dy - 0.64 * k + bounce);
+    c.drawCircle(head, 0.22 * k, body);
+    // Round ears.
+    c.drawCircle(head.translate(-0.09 * k, -0.19 * k), 0.075 * k, dark);
+    c.drawCircle(head.translate(0.11 * k, -0.19 * k), 0.075 * k, dark);
+    // Snout.
+    c.drawOval(
+        Rect.fromCenter(
+            center: head.translate(-0.17 * k, 0.05 * k),
+            width: 0.17 * k,
+            height: 0.13 * k),
+        Paint()..color = const Color(0xFF8A6540));
+    c.drawCircle(head.translate(-0.24 * k, 0.03 * k), 2.8,
+        Paint()..color = Colors.black87);
+    // Eyes.
+    c.drawCircle(head.translate(-0.06 * k, -0.04 * k), 2.2,
+        Paint()..color = Colors.black);
+
+    // Legs (blurred windmill while charging).
+    final leg = Paint()..color = dark.color..strokeWidth = 7;
+    for (int i = 0; i < 4; i++) {
+      final phase = running ? math.sin(g.time * 14 + i * 1.6) * 7 : 0.0;
+      final lx = o.dx - 0.32 * k + i * 0.21 * k;
+      c.drawLine(Offset(lx, o.dy - 0.26 * k + bounce),
+          Offset(lx + phase, o.dy), leg);
+    }
+    c.restore();
+
+    // Comic-strip "GRRR!!" — drawn outside the mirrored canvas so the
+    // text never flips.
+    if (running && !facingRight) {
+      final tp = TextPainter(
+        text: const TextSpan(
+            text: 'GRRR!!',
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w900)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(c, head.translate(-24, -36));
     }
   }
 

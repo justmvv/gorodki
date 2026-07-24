@@ -24,6 +24,7 @@ enum Phase {
   crowSteal, // the crow relocates one of your pins (level 3)
   snowBury, // roof avalanche: only the head sticks out — level lost (level 3)
   sledCarry, // a kid on a sled has made off with the bat (level 3)
+  bearChase, // the snowdrift's resident has had enough (level 3)
   coconutBonk, // a coconut has fallen from the palm tree (level 5)
   dragonBreath, // the window dragon retaliates for the broken glass (level 4)
   cooldown, // short pause before the next throw / figure
@@ -71,6 +72,7 @@ class Drone {
   bool carrying = false;
   double x = 0, y = 0;
   double t = 0; // patrol lifetime
+  double vx = 0; // horizontal glide speed (paraglider only)
 }
 
 /// One-line messages shown as a banner.
@@ -177,6 +179,13 @@ class GameController extends ChangeNotifier {
   bool _treeChecked = false; // once per throw (level 3)
   bool hogActive = false;
 
+  // The snowdrift — huge, suspiciously occupied.
+  int snowdriftHits = 0;
+  int _bearThreshold = 3; // 3..5, randomized
+  bool bearOut = false;
+  double bearX = World.snowdriftX;
+  bool bearFacingRight = false;
+
   // The trash bin's two startled residents.
   bool catsFleeing = false;
   double catsT = 0;
@@ -239,6 +248,7 @@ class GameController extends ChangeNotifier {
 
   GameController() {
     _broomThreshold = 3 + _rng.nextInt(4);
+    _bearThreshold = 3 + _rng.nextInt(3);
     _idleLimit = 15 + _rng.nextDouble() * 10;
     _setupFigure();
     _startPreview();
@@ -305,6 +315,10 @@ class GameController extends ChangeNotifier {
     coconutBandaged = false;
     dragonBreathing = false;
     catsFleeing = false;
+    snowdriftHits = 0;
+    _bearThreshold = 3 + _rng.nextInt(3);
+    bearOut = false;
+    bearFacingRight = false;
     _setupFigure();
     _startPreview();
     _say('🏏',
@@ -398,14 +412,26 @@ class GameController extends ChangeNotifier {
         ..vy = 0;
     } else if (roll < 0.15 && !drone.active && (level == 1 || beach)) {
       // The quadcopter flies only in good daylight (optics, warranty).
-      // On the beach it's a paraglider instead — same airspace, better
-      // view. Either way, it descends on patrol.
-      drone
-        ..active = true
-        ..carrying = false
-        ..x = 10 + _rng.nextDouble() * 4
-        ..y = 9.5
-        ..t = 0;
+      // On the beach it's a paraglider instead — same airspace, but it
+      // actually flies like one: a steady cross-sky glide, not a hover.
+      if (beach) {
+        final fromLeft = _rng.nextBool();
+        drone
+          ..active = true
+          ..carrying = false
+          ..x = fromLeft ? -2.5 : World.width + 2.5
+          ..y = 3.7
+          ..t = 0
+          ..vx = (fromLeft ? 1 : -1) * (1.5 + _rng.nextDouble() * 0.7);
+      } else {
+        drone
+          ..active = true
+          ..carrying = false
+          ..x = 10 + _rng.nextDouble() * 4
+          ..y = 9.5
+          ..t = 0
+          ..vx = 0;
+      }
       _sfx('drone');
     }
 
@@ -517,6 +543,8 @@ class GameController extends ChangeNotifier {
         }
       case Phase.sledCarry:
         _tickSledCarry(dt);
+      case Phase.bearChase:
+        _tickBearChase(dt);
       case Phase.coconutBonk:
         _tickCoconutBonk(dt);
       case Phase.dragonBreath:
@@ -613,7 +641,8 @@ class GameController extends ChangeNotifier {
     // --- Quadcopter interception ---------------------------------------
     if (drone.active && !drone.carrying) {
       final ddx = bat.x - drone.x, ddy = bat.y - drone.y;
-      if (ddx * ddx + ddy * ddy < 0.35) {
+      final catchR = beach ? 0.55 : 0.35;
+      if (ddx * ddx + ddy * ddy < catchR) {
         drone.carrying = true;
         phase = Phase.droneCarry;
         _sfx('drone');
@@ -778,6 +807,24 @@ class GameController extends ChangeNotifier {
         bat.vx *= -0.4;
         bat.vy = math.max(bat.vy, 1.5);
         _throwHadContact = true;
+      }
+      // The huge snowdrift in the corner — something in there is
+      // counting the hits.
+      if (!bearOut &&
+          (bat.x - World.snowdriftX).abs() < World.snowdriftW / 2 + 0.15 &&
+          bat.y < World.snowdriftH) {
+        snowdriftHits++;
+        bat.vx *= -0.4;
+        bat.vy = math.max(bat.vy, 1.3);
+        _throwHadContact = true;
+        _sfx('knock');
+        if (snowdriftHits >= _bearThreshold) {
+          _startBearChase();
+          return;
+        }
+        final lines = L10n.t.snowdriftLines;
+        _say('❄️', lines[math.min(snowdriftHits - 1, lines.length - 1)],
+            ttl: 3.5);
       }
     }
 
@@ -1001,6 +1048,10 @@ class GameController extends ChangeNotifier {
 
   void _tickDrone(double dt) {
     if (!drone.active) return;
+    if (beach) {
+      _tickParaglider(dt);
+      return;
+    }
     if (drone.carrying) {
       // Ascends with the confiscated bat.
       drone.y += 2.6 * dt;
@@ -1025,6 +1076,34 @@ class GameController extends ChangeNotifier {
     drone.y += (3.6 - drone.y) * dt * 1.2;
     if (bat.active && phase == Phase.flying) {
       drone.x += (bat.x - drone.x).clamp(-3.0, 3.0) * dt * 1.4;
+    }
+  }
+
+  /// Real glider dynamics, not a quadcopter's hover-and-track: the
+  /// paraglider commits to one steady cross-sky heading and rides the
+  /// thermals, so catching a bat is a matter of luck and timing, not
+  /// homing.
+  void _tickParaglider(double dt) {
+    if (drone.carrying) {
+      // Climbs away with its catch, still drifting the way it was going.
+      drone.x += drone.vx * dt;
+      drone.y += 1.0 * dt;
+      bat.x = drone.x;
+      bat.y = drone.y - 0.55;
+      bat.angle = math.sin(time * 3) * 0.2;
+      if (drone.y > 9.8 || drone.x < -4 || drone.x > World.width + 4) {
+        drone.active = false;
+        bat.active = false;
+      }
+      return;
+    }
+    drone.t += dt;
+    drone.x += drone.vx * dt;
+    // A lazy soaring bob riding the thermals — altitude drifts on its
+    // own schedule, never snapping toward the bat.
+    drone.y = 3.7 + math.sin(drone.t * 0.8) * 1.1;
+    if (drone.x < -4 || drone.x > World.width + 4) {
+      drone.active = false;
     }
   }
 
@@ -1353,6 +1432,41 @@ class GameController extends ChangeNotifier {
     }
   }
 
+  void _startBearChase() {
+    phase = Phase.bearChase;
+    bearOut = true;
+    bearFacingRight = false;
+    playerFleeing = true;
+    _eventT = 0;
+    throwsTotal++; // penalty throw
+    _sfx('bark');
+    _say('🐻', L10n.t.bearChase, ttl: 4.5);
+  }
+
+  void _tickBearChase(double dt) {
+    _eventT += dt;
+    if (_eventT < 1.4) {
+      // The bear charges out of the drift.
+      final t = _eventT / 1.4;
+      bearX = World.snowdriftX - (World.snowdriftX - (playerX + 0.8)) * t;
+      if (_eventT > 0.5) {
+        playerRunOffset -= dt * 6;
+      }
+    } else if (_eventT < 3.2) {
+      playerRunOffset -= dt * 4;
+      bearFacingRight = true; // ambles back, unbothered
+      bearX += (World.snowdriftX - bearX) * dt * 2;
+    } else {
+      bearOut = false;
+      bearFacingRight = false;
+      playerFleeing = false;
+      playerRunOffset = 0;
+      snowdriftHits = 0;
+      _bearThreshold = 3 + _rng.nextInt(3);
+      _endThrow();
+    }
+  }
+
   void _hitBottle() {
     bottleFlying = true;
     bottleFx = World.bottleX;
@@ -1461,6 +1575,9 @@ class GameController extends ChangeNotifier {
         drone.active = false;
         pigeon.active = false;
         catsFleeing = false;
+        snowdriftHits = 0;
+        bearOut = false;
+        _bearThreshold = 3 + _rng.nextInt(3);
         _setupFigure();
         _sfx('fanfare');
         _say('🌨️', L10n.t.level3Intro, ttl: 6);
@@ -1488,6 +1605,8 @@ class GameController extends ChangeNotifier {
         bottleHits = 0;
         _broomThreshold = 3 + _rng.nextInt(4);
         dragonBreathing = false;
+        snowdriftHits = 0;
+        bearOut = false;
         _setupFigure();
         _sfx('fanfare');
         _say('🌕', L10n.t.level4Intro, ttl: 6);
@@ -1615,6 +1734,9 @@ class GameController extends ChangeNotifier {
       hogActive = false;
       sledActive = false;
       manholeManUp = false;
+      snowdriftHits = 0;
+      bearOut = false;
+      _bearThreshold = 3 + _rng.nextInt(3);
       _setupFigure();
       _startPreview();
     }

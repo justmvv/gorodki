@@ -92,12 +92,14 @@ class GameStrings {
       paragliderIntercept,
       coconutMsg,
       dragonBreathMsg,
-      catsFlee;
+      catsFlee,
+      bearChase;
   final List<String> missLines,
       bottleLines,
       bottleLinesNightmare,
       bottleLinesBeach,
-      snowmanLines;
+      snowmanLines,
+      snowdriftLines;
 
   const GameStrings({
     required this.code,
@@ -189,11 +191,13 @@ class GameStrings {
     required this.coconutMsg,
     required this.dragonBreathMsg,
     required this.catsFlee,
+    required this.bearChase,
     required this.missLines,
     required this.bottleLines,
     required this.bottleLinesNightmare,
     required this.bottleLinesBeach,
     required this.snowmanLines,
+    required this.snowdriftLines,
   });
 }
 
@@ -338,10 +342,17 @@ const en = GameStrings(
       'The dragon leans out of the shattered window and breathes a jet of fire straight at you! You duck, cover, and reconsider several life choices.',
   catsFlee:
       'You hit the trash bin! Two extremely startled cats launch out, backs arched, and vanish in opposite directions.',
+  bearChase:
+      'The snowdrift erupts! A very large brown bear climbs out and chases you off the field. (+1 penalty throw)',
   snowmanLines: [
     'The snowman lost his bucket. He is above such things.',
     'The snowman is now a third shorter. The carrot remains optimistic.',
     'Only a snow stump remains. It forgives you. Probably.',
+  ],
+  snowdriftLines: [
+    'THUMP. The snowdrift shudders. Something inside grumbles.',
+    'THUMP. A low growl rolls out from under the snow.',
+    'THUMP. The whole drift is shaking now. This seems unwise.',
   ],
   missLines: [
     'Uncle Gena applauds. Ironically.',
@@ -505,10 +516,17 @@ const de = GameStrings(
       'Der Drache lehnt sich aus dem zerbrochenen Fenster und speit einen Feuerstoß direkt auf dich! Du duckst dich, deckst dich und überdenkst mehrere Lebensentscheidungen.',
   catsFlee:
       'Du hast den Mülleimer getroffen! Zwei zutiefst erschrockene Katzen schießen heraus, Rücken hochgestellt, und verschwinden in entgegengesetzte Richtungen.',
+  bearChase:
+      'Die Schneewehe explodiert! Ein sehr großer Braunbär klettert heraus und jagt dich vom Feld. (+1 Strafwurf)',
   snowmanLines: [
     'Der Schneemann hat seinen Eimer verloren. Er steht über solchen Dingen.',
     'Der Schneemann ist jetzt ein Drittel kürzer. Die Karotte bleibt optimistisch.',
     'Nur ein Schneestumpf ist übrig. Er verzeiht dir. Wahrscheinlich.',
+  ],
+  snowdriftLines: [
+    'BUMM. Die Schneewehe zittert. Etwas darin knurrt.',
+    'BUMM. Ein tiefes Grollen dringt unter dem Schnee hervor.',
+    'BUMM. Die ganze Wehe wackelt jetzt. Das wirkt unklug.',
   ],
   missLines: [
     'Onkel Gena applaudiert. Ironisch.',
@@ -673,10 +691,17 @@ const es = GameStrings(
       '¡El dragón se asoma por la ventana rota y te lanza un chorro de fuego directo! Te agachas, te cubres y reconsideras varias decisiones de vida.',
   catsFlee:
       '¡Golpeaste el cubo de basura! Dos gatos absolutamente aterrorizados salen disparados, con el lomo arqueado, y desaparecen en direcciones opuestas.',
+  bearChase:
+      '¡El montón de nieve estalla! Un enorme oso pardo sale trepando y te persigue fuera del campo. (+1 tiro de penalización)',
   snowmanLines: [
     'El muñeco de nieve perdió su cubo. Está por encima de esas cosas.',
     'El muñeco de nieve es ahora un tercio más bajo. La zanahoria sigue optimista.',
     'Solo queda un tocón de nieve. Te perdona. Probablemente.',
+  ],
+  snowdriftLines: [
+    'PUM. El montón de nieve tiembla. Algo dentro gruñe.',
+    'PUM. Un gruñido grave sale de debajo de la nieve.',
+    'PUM. Todo el montón se sacude ahora. Esto parece imprudente.',
   ],
   missLines: [
     'El tío Gena aplaude. Irónicamente.',
@@ -840,10 +865,17 @@ const nl = GameStrings(
       'De draak leunt uit het gebroken raam en spuwt een vuurstraal recht op je af! Je duikt weg, dekt je in en overdenkt een aantal levenskeuzes.',
   catsFlee:
       'Je raakte de vuilnisbak! Twee doodsbange katten schieten eruit, rug gebold, en verdwijnen in tegengestelde richtingen.',
+  bearChase:
+      'De sneeuwhoop ontploft! Een enorme bruine beer klimt eruit en jaagt je van het veld. (+1 strafworp)',
   snowmanLines: [
     'De sneeuwpop is zijn emmer kwijt. Hij staat boven zulke dingen.',
     'De sneeuwpop is nu een derde korter. De wortel blijft optimistisch.',
     'Alleen een sneeuwstronk is over. Hij vergeeft het je. Waarschijnlijk.',
+  ],
+  snowdriftLines: [
+    'BONK. De sneeuwhoop schudt. Iets erin gromt.',
+    'BONK. Een diep gegrom klinkt onder de sneeuw vandaan.',
+    'BONK. De hele hoop schudt nu. Dit lijkt onverstandig.',
   ],
   missLines: [
     'Oom Gena applaudisseert. Ironisch.',
