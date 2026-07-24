@@ -45,6 +45,8 @@ class ScenePainter extends CustomPainter {
       _car(canvas);
       _manholeProp(canvas);
       _hedgehogProp(canvas);
+      _trashBin(canvas);
+      _fleeingCats(canvas);
       if (g.ownerChasing) _ownerRunner(canvas);
     } else if (g.winter) {
       _yolka(canvas);
@@ -598,9 +600,12 @@ class ScenePainter extends CustomPainter {
           crack);
     }
 
-    // The dragon, leaning further out while actively breathing fire.
-    final lean = g.dragonBreathing ? 8.0 : 2.0;
-    final head = ctr.translate(lean, -2);
+    // The dragon: anchored at the windowsill, not the middle of the
+    // glass, so it actually reads as leaning OUT of the opening rather
+    // than being stuck inside it. Leans out further while breathing.
+    final sill = Offset(win.right - 4, win.bottom - win.height * 0.22);
+    final lean = g.dragonBreathing ? 20.0 : 9.0;
+    final head = sill.translate(lean, -4);
     final scale = Paint()..color = const Color(0xFF3E6B4A);
     c.drawOval(
         Rect.fromCenter(center: head, width: 22, height: 15), scale);
@@ -2627,50 +2632,69 @@ class ScenePainter extends CustomPainter {
   /// standing. World-space, so it works regardless of kon/half-kon.
   void _dragonFireBreath(Canvas c) {
     if (!g.dragonBreathing) return;
-    final src = _w(World.buildingRX + 0.85,
-        (World.windowY1 + World.windowY2) / 2 + 0.3);
+    // Roughly where the dragon's snout ends up, leaning out of the sill.
+    final src = _w(World.buildingRX + 1.15,
+        (World.windowY1 + World.windowY2) / 2 + 0.15);
     final dst = _w(g.playerX + 0.15, 1.9);
     final dx = dst.dx - src.dx, dy = dst.dy - src.dy;
     final len = math.sqrt(dx * dx + dy * dy).clamp(1.0, 9999).toDouble();
     final nx = dx / len, ny = dy / len;
-    final px = -ny, py = nx; // perpendicular, for the beam's width
+    final px = -ny, py = nx; // perpendicular, for the lateral wobble
 
-    const segments = 10;
-    Path buildBeam(double baseWidth, double taper) {
-      final top = <Offset>[];
-      final bot = <Offset>[];
-      for (int i = 0; i <= segments; i++) {
-        final t = i / segments;
-        final cx = src.dx + dx * t;
-        final cy = src.dy + dy * t;
-        final wobble = math.sin(g.time * 18 + t * 10) * (1 - t) * 4;
-        final w = (1 - t * taper) * baseWidth;
-        top.add(Offset(cx + px * w + px * wobble * 0.3, cy + py * w));
-        bot.add(Offset(cx - px * w, cy - py * w));
+    // A faint, wavy contrail for continuity between the puffs below.
+    final trail = Path();
+    const trailSegs = 24;
+    for (int i = 0; i <= trailSegs; i++) {
+      final t = i / trailSegs;
+      final cx = src.dx + dx * t;
+      final cy = src.dy + dy * t;
+      final wave = math.sin(t * 9 - g.time * 10) * 14 * math.sin(t * math.pi);
+      final p = Offset(cx + px * wave, cy + py * wave);
+      if (i == 0) {
+        trail.moveTo(p.dx, p.dy);
+      } else {
+        trail.lineTo(p.dx, p.dy);
       }
-      final path = Path()..moveTo(top.first.dx, top.first.dy);
-      for (final p in top.skip(1)) {
-        path.lineTo(p.dx, p.dy);
-      }
-      for (final p in bot.reversed) {
-        path.lineTo(p.dx, p.dy);
-      }
-      path.close();
-      return path;
+    }
+    c.drawPath(
+        trail,
+        Paint()
+          ..color = const Color(0xFFFF7A2E).withValues(alpha: 0.28)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 5
+          ..strokeCap = StrokeCap.round);
+
+    // The flame itself: a stream of puffs actually flying from the
+    // window to the player, snaking side to side as they travel rather
+    // than sitting in a straight rigid line.
+    const puffCount = 10;
+    for (int i = 0; i < puffCount; i++) {
+      final t = (g.time * 2.3 + i / puffCount) % 1.0;
+      final cx = src.dx + dx * t;
+      final cy = src.dy + dy * t;
+      final wave = math.sin(t * 9 - g.time * 10) * 14 * math.sin(t * math.pi);
+      final flutter = math.sin(g.time * 22 + i * 1.7) * 3;
+      final wx = cx + px * (wave + flutter);
+      final wy = cy + py * (wave + flutter);
+      final fade = math.sin(t * math.pi); // fades in near the window, out near impact
+      final size = (5 + 4 * (1 - t)) * (0.75 + 0.35 * math.sin(g.time * 16 + i));
+      final alpha = (0.25 + 0.65 * fade).clamp(0.0, 1.0);
+      c.drawCircle(Offset(wx, wy), size * 1.7,
+          Paint()..color = Color.fromRGBO(255, 90, 30, alpha * 0.3));
+      c.drawCircle(Offset(wx, wy), size,
+          Paint()..color = Color.fromRGBO(255, 140, 40, alpha * 0.75));
+      c.drawCircle(Offset(wx, wy), size * 0.5,
+          Paint()..color = Color.fromRGBO(255, 224, 130, alpha * 0.9));
     }
 
-    c.drawPath(buildBeam(10, 0.7),
-        Paint()..color = const Color(0xFFFF5A1E).withValues(alpha: 0.75));
-    c.drawPath(buildBeam(5, 0.75),
-        Paint()..color = const Color(0xFFFFDC6E).withValues(alpha: 0.8));
-
-    // A few embers drifting free of the beam.
+    // A few sparks drifting free, for good measure.
     for (int i = 0; i < 5; i++) {
       final t = (g.time * 1.3 + i * 0.37) % 1.0;
-      final cx = src.dx + dx * t + math.sin(g.time * 6 + i) * 8;
-      final cy = src.dy + dy * t - 6 + math.sin(g.time * 4 + i) * 4;
+      final wave = math.sin(t * 9 - g.time * 10) * 14 * math.sin(t * math.pi);
+      final cx = src.dx + dx * t + px * wave + math.sin(g.time * 6 + i) * 6;
+      final cy = src.dy + dy * t + py * wave - 4 + math.sin(g.time * 4 + i) * 4;
       c.drawCircle(Offset(cx, cy), 2.0 - t * 1.4,
-          Paint()..color = Color.fromRGBO(255, 180, 80, (1 - t) * 0.8));
+          Paint()..color = Color.fromRGBO(255, 190, 90, (1 - t) * 0.8));
     }
   }
 
@@ -2975,6 +2999,117 @@ class ScenePainter extends CustomPainter {
       c.drawLine(o.translate(0.08 * k, -0.02 * k),
           o.translate(0.08 * k - waddle, 0), leg);
     }
+  }
+
+  /// The trash bin, minding its own business in the right corner — until
+  /// it isn't.
+  void _trashBin(Canvas c) {
+    final o = _w(World.binX, 0);
+    final w = World.binW * _scale;
+    final h = World.binH * _scale;
+    final metal = Paint()..color = const Color(0xFF6E7580);
+    final dark = Paint()..color = const Color(0xFF4A5058);
+    final body = Rect.fromLTWH(o.dx - w / 2, o.dy - h, w, h);
+    c.drawRRect(RRect.fromRectAndRadius(body, const Radius.circular(3)), metal);
+    for (int i = 1; i < 3; i++) {
+      c.drawLine(Offset(body.left, body.top + h * i / 3),
+          Offset(body.right, body.top + h * i / 3),
+          dark
+            ..strokeWidth = 1.5);
+    }
+    // The lid — still visibly askew for a moment after the recent exit.
+    final lidTilt = (g.catsFleeing && g.catsT < 1.2) ? -0.5 : 0.0;
+    c.save();
+    c.translate(body.center.dx, body.top);
+    c.rotate(lidTilt);
+    c.drawOval(
+        Rect.fromCenter(center: Offset.zero, width: w * 1.05, height: h * 0.22),
+        dark);
+    c.restore();
+  }
+
+  /// Two extremely startled cats, launching out of the bin and scurrying
+  /// off in opposite directions.
+  void _fleeingCats(Canvas c) {
+    if (!g.catsFleeing) return;
+    final t = g.catsT;
+    if (t < 0.35) {
+      final o = _w(World.binX, World.binH);
+      final pop = t / 0.35;
+      for (final side in [-1.0, 1.0]) {
+        _archedCat(c, o.translate(side * 10 * pop, -10 * pop - 6), pop);
+      }
+      return;
+    }
+    final run = t - 0.35;
+    for (final side in [-1.0, 1.0]) {
+      final x = World.binX + side * run * 3.2;
+      _runningCat(c, _w(x, 0), side < 0);
+    }
+  }
+
+  void _archedCat(Canvas c, Offset pos, double pop) {
+    final body = Paint()..color = const Color(0xFF3A3530);
+    c.save();
+    c.translate(pos.dx, pos.dy);
+    c.scale(1.0, 0.6 + 0.4 * pop);
+    final p = Path()
+      ..moveTo(-10, 4)
+      ..quadraticBezierTo(0, -14, 10, 4)
+      ..quadraticBezierTo(0, 0, -10, 4)
+      ..close();
+    c.drawPath(p, body);
+    c.drawLine(const Offset(8, 2), const Offset(13, -10),
+        Paint()
+          ..color = body.color
+          ..strokeWidth = 4);
+    c.drawPath(
+        Path()
+          ..moveTo(-6, -8)
+          ..lineTo(-8, -14)
+          ..lineTo(-3, -9)
+          ..close(),
+        body);
+    c.drawPath(
+        Path()
+          ..moveTo(4, -9)
+          ..lineTo(6, -15)
+          ..lineTo(8, -9)
+          ..close(),
+        body);
+    c.drawCircle(const Offset(-2, -6), 1.2, Paint()..color = const Color(0xFFFFD040));
+    c.drawCircle(const Offset(3, -6), 1.2, Paint()..color = const Color(0xFFFFD040));
+    c.restore();
+  }
+
+  void _runningCat(Canvas c, Offset pos, bool facingLeft) {
+    final body = Paint()..color = const Color(0xFF3A3530);
+    final legPhase = math.sin(g.time * 24) * 4;
+    c.save();
+    c.translate(pos.dx, pos.dy);
+    if (!facingLeft) c.scale(-1, 1);
+    c.drawOval(
+        Rect.fromCenter(center: const Offset(0, -6), width: 22, height: 9),
+        body);
+    c.drawCircle(const Offset(-10, -9), 4.5, body);
+    c.drawPath(
+        Path()
+          ..moveTo(-13, -12)
+          ..lineTo(-14, -17)
+          ..lineTo(-10, -13)
+          ..close(),
+        body);
+    c.drawLine(const Offset(10, -6),
+        Offset(17, -6 - math.sin(g.time * 10) * 3),
+        Paint()
+          ..color = body.color
+          ..strokeWidth = 3);
+    final leg = Paint()
+      ..color = body.color
+      ..strokeWidth = 3;
+    c.drawLine(const Offset(-6, -2), Offset(-6 + legPhase, 2), leg);
+    c.drawLine(const Offset(4, -2), Offset(4 - legPhase, 2), leg);
+    c.restore();
   }
 
   // ----------------------------------------------------------------

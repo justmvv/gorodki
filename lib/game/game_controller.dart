@@ -177,6 +177,10 @@ class GameController extends ChangeNotifier {
   bool _treeChecked = false; // once per throw (level 3)
   bool hogActive = false;
 
+  // The trash bin's two startled residents.
+  bool catsFleeing = false;
+  double catsT = 0;
+
   // The spider, who occasionally weaves a web between the two lamps.
   bool spiderWeaving = false; // actively spinning right now
   bool webActive = false; // web is finished and can snag the bat
@@ -300,6 +304,7 @@ class GameController extends ChangeNotifier {
     coconutDazed = false;
     coconutBandaged = false;
     dragonBreathing = false;
+    catsFleeing = false;
     _setupFigure();
     _startPreview();
     _say('🏏',
@@ -445,6 +450,10 @@ class GameController extends ChangeNotifier {
         hogX -= 0.45 * dt;
         if (hogX < 9.0) hogActive = false;
       }
+    }
+    if (catsFleeing) {
+      catsT += dt;
+      if (catsT > 2.6) catsFleeing = false;
     }
     if (sledActive && phase != Phase.sledCarry) {
       sledX -= 5.5 * dt;
@@ -695,6 +704,18 @@ class GameController extends ChangeNotifier {
           _sfx('boing');
           _say('🕸️', L10n.t.webCatch, ttl: 4);
         }
+      }
+      // The trash bin, right in the corner.
+      if (!catsFleeing &&
+          (bat.x - World.binX).abs() < World.binW / 2 + 0.2 &&
+          bat.y < World.binH + 0.3) {
+        catsFleeing = true;
+        catsT = 0;
+        bat.vx *= -0.3;
+        bat.vy = math.max(bat.vy, 1.2);
+        _throwHadContact = true;
+        _sfx('boing');
+        _say('🐱', L10n.t.catsFlee, ttl: 4);
       }
       // The hedgehog.
       if (hogActive &&
@@ -1414,6 +1435,7 @@ class GameController extends ChangeNotifier {
         webActive = false;
         webAlpha = 0;
         hogActive = false;
+        catsFleeing = false;
         manholeManUp = false;
         drone.active = false;
         pigeon.active = false;
@@ -1438,6 +1460,7 @@ class GameController extends ChangeNotifier {
         playerBuried = false;
         drone.active = false;
         pigeon.active = false;
+        catsFleeing = false;
         _setupFigure();
         _sfx('fanfare');
         _say('🌨️', L10n.t.level3Intro, ttl: 6);

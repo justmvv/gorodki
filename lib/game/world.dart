@@ -72,6 +72,12 @@ class World {
   static const double webTopY = 2.25;
   static const double webBottomY = 0.35;
 
+  // A trash bin, tucked into the right corner near the building — home
+  // to at least two very startled cats.
+  static const double binX = 20.15;
+  static const double binW = 0.5;
+  static const double binH = 0.7;
+
   // --- Level 3: the winter yard ----------------------------------------
   // The yolka, complete with star.
   static const double treeX = 12.15;

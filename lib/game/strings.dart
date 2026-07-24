@@ -91,7 +91,8 @@ class GameStrings {
       seagullSteal,
       paragliderIntercept,
       coconutMsg,
-      dragonBreathMsg;
+      dragonBreathMsg,
+      catsFlee;
   final List<String> missLines,
       bottleLines,
       bottleLinesNightmare,
@@ -187,6 +188,7 @@ class GameStrings {
     required this.paragliderIntercept,
     required this.coconutMsg,
     required this.dragonBreathMsg,
+    required this.catsFlee,
     required this.missLines,
     required this.bottleLines,
     required this.bottleLinesNightmare,
@@ -334,6 +336,8 @@ const en = GameStrings(
       'THOCK! A coconut, dropped by that suspiciously tall palm tree, lands square on your head. You see stars, and possibly a lawyer.',
   dragonBreathMsg:
       'The dragon leans out of the shattered window and breathes a jet of fire straight at you! You duck, cover, and reconsider several life choices.',
+  catsFlee:
+      'You hit the trash bin! Two extremely startled cats launch out, backs arched, and vanish in opposite directions.',
   snowmanLines: [
     'The snowman lost his bucket. He is above such things.',
     'The snowman is now a third shorter. The carrot remains optimistic.',
@@ -499,6 +503,8 @@ const de = GameStrings(
       'PLONK! Eine Kokosnuss von dieser verdächtig hohen Palme landet mitten auf deinem Kopf. Du siehst Sterne, und womöglich einen Anwalt.',
   dragonBreathMsg:
       'Der Drache lehnt sich aus dem zerbrochenen Fenster und speit einen Feuerstoß direkt auf dich! Du duckst dich, deckst dich und überdenkst mehrere Lebensentscheidungen.',
+  catsFlee:
+      'Du hast den Mülleimer getroffen! Zwei zutiefst erschrockene Katzen schießen heraus, Rücken hochgestellt, und verschwinden in entgegengesetzte Richtungen.',
   snowmanLines: [
     'Der Schneemann hat seinen Eimer verloren. Er steht über solchen Dingen.',
     'Der Schneemann ist jetzt ein Drittel kürzer. Die Karotte bleibt optimistisch.',
@@ -665,6 +671,8 @@ const es = GameStrings(
       '¡PLAF! Un coco de esa palmera sospechosamente alta te cae justo en la cabeza. Ves estrellas, y posiblemente a un abogado.',
   dragonBreathMsg:
       '¡El dragón se asoma por la ventana rota y te lanza un chorro de fuego directo! Te agachas, te cubres y reconsideras varias decisiones de vida.',
+  catsFlee:
+      '¡Golpeaste el cubo de basura! Dos gatos absolutamente aterrorizados salen disparados, con el lomo arqueado, y desaparecen en direcciones opuestas.',
   snowmanLines: [
     'El muñeco de nieve perdió su cubo. Está por encima de esas cosas.',
     'El muñeco de nieve es ahora un tercio más bajo. La zanahoria sigue optimista.',
@@ -830,6 +838,8 @@ const nl = GameStrings(
       'PLOF! Een kokosnoot van die verdacht hoge palmboom komt recht op je hoofd terecht. Je ziet sterretjes, en mogelijk een advocaat.',
   dragonBreathMsg:
       'De draak leunt uit het gebroken raam en spuwt een vuurstraal recht op je af! Je duikt weg, dekt je in en overdenkt een aantal levenskeuzes.',
+  catsFlee:
+      'Je raakte de vuilnisbak! Twee doodsbange katten schieten eruit, rug gebold, en verdwijnen in tegengestelde richtingen.',
   snowmanLines: [
     'De sneeuwpop is zijn emmer kwijt. Hij staat boven zulke dingen.',
     'De sneeuwpop is nu een derde korter. De wortel blijft optimistisch.',
