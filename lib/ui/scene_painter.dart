@@ -483,7 +483,8 @@ class ScenePainter extends CustomPainter {
             isZina
                 ? (Paint()
                   ..color = g.nightmare
-                      ? const Color(0xFFB8D8C0)
+                      ? Color.lerp(const Color(0xFF7A2410),
+                          const Color(0xFFFF9A3E), 0.4 + 0.3 * math.sin(g.time * 4))!
                       : const Color(0xFFDDEBF2))
                 : eerie
                     ? (Paint()..color = const Color(0xFF5FA86A))
@@ -563,7 +564,38 @@ class ScenePainter extends CustomPainter {
   /// which point it leans out — see [_dragonFireBreath] for the actual
   /// flame reaching across the yard.
   void _dragonWindow(Canvas c, Rect win) {
-    // Scorched, tattered curtains.
+    // Whatever's on fire in there is doing most of the lighting — this
+    // yard doesn't do "calm." An ambient glow wash plus a few flame
+    // licks near the floor, visible right through the glass regardless
+    // of whether the dragon itself is currently showing off.
+    final flicker = 0.6 + 0.4 * math.sin(g.time * 9);
+    c.drawRect(
+        win,
+        Paint()
+          ..color = Color.fromRGBO(255, 90, 20, 0.18 + 0.09 * flicker));
+    for (int i = 0; i < 3; i++) {
+      final fx = win.left + win.width * (0.26 + i * 0.24);
+      final baseY = win.bottom - 3;
+      final h = (13 + 5 * math.sin(g.time * 8 + i * 2.3)) * (0.7 + 0.3 * flicker);
+      final outer = Path()
+        ..moveTo(fx - 4, baseY)
+        ..quadraticBezierTo(fx - 6, baseY - h * 0.55, fx, baseY - h)
+        ..quadraticBezierTo(fx + 6, baseY - h * 0.55, fx + 4, baseY)
+        ..close();
+      c.drawPath(
+          outer, Paint()..color = const Color(0xFFFF7A2E).withValues(alpha: 0.8));
+      final innerH = h * 0.55;
+      final inner = Path()
+        ..moveTo(fx - 2, baseY)
+        ..quadraticBezierTo(fx - 3, baseY - innerH * 0.6, fx, baseY - innerH)
+        ..quadraticBezierTo(fx + 3, baseY - innerH * 0.6, fx + 2, baseY)
+        ..close();
+      c.drawPath(inner,
+          Paint()..color = const Color(0xFFFFE082).withValues(alpha: 0.85));
+    }
+
+    // Scorched, tattered curtains — drawn over the fire, so it reads as
+    // glowing behind them rather than sitting flat on the glass.
     final curtain = Paint()..color = const Color(0xFF2A2026);
     c.drawRect(
         Rect.fromLTWH(win.left, win.top, win.width * 0.16, win.height),
@@ -603,32 +635,43 @@ class ScenePainter extends CustomPainter {
           crack);
     }
 
+    if (!g.dragonBreathing) {
+      // The attack is over — it retreats back into the shadows rather
+      // than staying permanently draped out of a broken window. Only
+      // the watching eyes remain, now glowing angrier through the cracks.
+      final glow = 0.5 + 0.3 * math.sin(g.time * 2.4);
+      for (final dx in [-4.0, 4.0]) {
+        c.drawCircle(ctr.translate(dx, -2), 2.4,
+            Paint()..color = Color.fromRGBO(255, 80, 30, 0.6 + glow * 0.4));
+      }
+      return;
+    }
+
     // The dragon: anchored just past the window FRAME's own outer edge
     // (not the glass), with enough lean to clear the head's own half
     // -width — otherwise the resting pose visually overlaps the frame
     // and reads as "stuck in the window" instead of leaning out of it.
-    // Leans out further still while breathing.
+    // Only leans out while actually breathing (see above).
     final sill = Offset(win.right + 4, win.bottom - win.height * 0.22);
-    final lean = g.dragonBreathing ? 30.0 : 15.0;
-    final head = sill.translate(lean, -4);
+    final head = sill.translate(30.0, -4);
     final scale = Paint()..color = const Color(0xFF3E6B4A);
     c.drawOval(
         Rect.fromCenter(center: head, width: 22, height: 15), scale);
     c.drawOval(
         Rect.fromCenter(center: head.translate(10, 3), width: 14, height: 8),
         scale);
-    final horn = Paint()..color = const Color(0xFF1B1214);
+    final horn = Paint()..color = const Color(0xFF8B3A22);
     c.drawPath(
         Path()
           ..moveTo(head.dx - 6, head.dy - 7)
-          ..lineTo(head.dx - 9, head.dy - 14)
+          ..lineTo(head.dx - 10, head.dy - 17)
           ..lineTo(head.dx - 3, head.dy - 8)
           ..close(),
         horn);
     c.drawPath(
         Path()
           ..moveTo(head.dx + 2, head.dy - 8)
-          ..lineTo(head.dx + 1, head.dy - 15)
+          ..lineTo(head.dx + 2, head.dy - 18)
           ..lineTo(head.dx + 7, head.dy - 9)
           ..close(),
         horn);
@@ -1329,10 +1372,13 @@ class ScenePainter extends CustomPainter {
       c.drawArc(Rect.fromCircle(center: head, radius: 10.5), math.pi * 0.95,
           math.pi, true, Paint()..color = const Color(0xFF5A4632));
       if (g.nightmare) {
-        final horn = Paint()..color = const Color(0xFF1B1214);
+        // A dark rust-brown reads clearly against both the night sky
+        // and the ushanka — near-black horns were invisible against the
+        // nightmare backdrop.
+        final horn = Paint()..color = const Color(0xFF8B3A22);
         for (final side in [-1.0, 1.0]) {
           final base = head.translate(side * 6, -8);
-          final tip = head.translate(side * 10, -16);
+          final tip = head.translate(side * 11, -19);
           c.drawPath(
               Path()
                 ..moveTo(base.dx - 2, base.dy)
@@ -1530,10 +1576,10 @@ class ScenePainter extends CustomPainter {
           math.pi, true, Paint()..color = const Color(0xFF5A4632));
     }
     if (g.nightmare) {
-      final horn = Paint()..color = const Color(0xFF1B1214);
+      final horn = Paint()..color = const Color(0xFF8B3A22);
       for (final side in [-1.0, 1.0]) {
         final base = head.translate(side * 6, -8);
-        final tip = head.translate(side * 10, -16);
+        final tip = head.translate(side * 11, -19);
         c.drawPath(
             Path()
               ..moveTo(base.dx - 2, base.dy)
