@@ -273,7 +273,7 @@ const en = GameStrings(
   lampOut:
       'POP! The streetlamp is out. The yard is now 20% more mysterious.',
   hedgehogMsg:
-      'BOING! The hedgehog curls up; the bat ricochets. Nature is undefeated.',
+      'BOING! The delivery robot spins on its wheels, headlights flaring, and speeds off the way it came.',
   batSteal:
       'A bat (the animal) has claimed your bat (the stick). Confusing for everyone involved.',
   batImpatient: 'The bat hangs upside down nearby, eyeing your nap with interest...',
@@ -299,7 +299,7 @@ const en = GameStrings(
       'The bat is stuck in the yolka! The star wobbles disapprovingly.',
   iceSlide: 'The frozen puddle! The bat glides like it never learned to stop.',
   sledKid:
-      'A kid on a sled zooms by and carries your bat away. "MIIINE!"',
+      'A skier carves past at full speed and snatches your bat off the ground. "MIIINE!"',
   level4Intro:
       'A blood moon rises... Level 4: Gorodki in a Nightmare! The pins are on fire, the wind is a brutal 80%, and something is watching from the portal.',
   level5Intro:
@@ -455,7 +455,7 @@ const de = GameStrings(
   lampOut:
       'PLOPP! Die Straßenlaterne ist aus. Der Hof ist jetzt 20% mysteriöser.',
   hedgehogMsg:
-      'BOING! Der Igel rollt sich ein; das Holz prallt ab. Die Natur bleibt ungeschlagen.',
+      'BOING! Der Lieferroboter dreht auf der Stelle, Scheinwerfer aufblitzend, und rast zurück, woher er kam.',
   batSteal:
       'Eine Fledermaus hat dein Schlagholz beschlagnahmt. Verwirrend für alle Beteiligten.',
   batImpatient: 'Die Fledermaus hängt kopfüber daneben und beäugt dein Nickerchen interessiert...',
@@ -480,7 +480,7 @@ const de = GameStrings(
       'Das Schlagholz steckt in der Jolka! Der Stern wackelt missbilligend.',
   iceSlide: 'Die gefrorene Pfütze! Das Holz gleitet, als hätte es Bremsen nie gelernt.',
   sledKid:
-      'Ein Kind auf dem Schlitten saust vorbei und nimmt dein Schlagholz mit. "MEINS!"',
+      'Ein Skifahrer saust in voller Fahrt vorbei und schnappt sich dein Schlagholz vom Boden. "MEINS!"',
   level4Intro:
       'Ein Blutmond geht auf... Level 4: Städtchen im Albtraum! Die Kegel brennen, der Wind liegt bei brutalen 80%, und etwas beobachtet dich aus dem Portal.',
   level5Intro:
@@ -635,7 +635,7 @@ const es = GameStrings(
   lampOut:
       '¡POP! La farola se apagó. El patio ahora es un 20% más misterioso.',
   hedgehogMsg:
-      '¡BOING! El erizo se hace bola; el bate rebota. La naturaleza sigue invicta.',
+      '¡BOING! El robot repartidor gira sobre sus ruedas, con los faros encendidos, y sale disparado por donde vino.',
   batSteal:
       'Un murciélago ha confiscado tu bate. Confuso para todos los implicados.',
   batImpatient: 'El murciélago cuelga cerca, boca abajo, mirando tu siesta con interés...',
@@ -661,7 +661,7 @@ const es = GameStrings(
   iceSlide:
       '¡El charco helado! El bate se desliza como si nunca hubiera aprendido a frenar.',
   sledKid:
-      'Un niño en trineo pasa zumbando y se lleva tu bate. "¡¡MÍO!!"',
+      'Un esquiador pasa a toda velocidad y te arrebata el bate del suelo. "¡¡MÍO!!"',
   level4Intro:
       'Sale una luna de sangre... ¡Nivel 4: Gorodki en una Pesadilla! Los bolos están en llamas, el viento sopla al 80% brutal, y algo observa desde el portal.',
   level5Intro:
@@ -816,7 +816,7 @@ const nl = GameStrings(
   lampOut:
       'PLOP! De lantaarn is uit. De hof is nu 20% mysterieuzer.',
   hedgehogMsg:
-      'BOING! De egel rolt zich op; de knuppel ketst af. De natuur blijft ongeslagen.',
+      'BOING! De bezorgrobot draait op zijn wielen, koplampen fel aan, en scheurt terug waar hij vandaan kwam.',
   batSteal:
       'Een vleermuis heeft je knuppel gevorderd. Verwarrend voor alle betrokkenen.',
   batImpatient: 'De vleermuis hangt ondersteboven vlakbij en bekijkt je dutje met interesse...',
@@ -841,7 +841,7 @@ const nl = GameStrings(
       'De knuppel zit vast in de kerstboom! De ster wiebelt afkeurend.',
   iceSlide: 'De bevroren plas! De knuppel glijdt alsof hij nooit heeft leren remmen.',
   sledKid:
-      'Een kind op een slee zoeft voorbij en neemt je knuppel mee. "VAN MIJ!"',
+      'Een skiër scheert in volle vaart voorbij en grist je knuppel van de grond. "VAN MIJ!"',
   level4Intro:
       'Er komt een bloedmaan op... Level 4: Gorodki in een Nachtmerrie! De pinnen staan in brand, de wind zit op een brute 80%, en iets houdt je in de gaten vanuit het portaal.',
   level5Intro:

@@ -51,7 +51,7 @@ class ScenePainter extends CustomPainter {
     } else if (g.winter) {
       _yolka(canvas);
       _snowmanProp(canvas);
-      _sledProp(canvas);
+      _skierProp(canvas);
       _snowdriftProp(canvas);
     } else {
       // Level 1, the nightmare yard, and the beach all share this hazard
@@ -3132,63 +3132,99 @@ class ScenePainter extends CustomPainter {
     }
   }
 
+  /// A small 4-wheeled delivery robot that trundles across the level-2
+  /// yard, headlights blazing. If the bat clips it, it doesn't curl up —
+  /// it turns tail and drives off the way it came.
   void _hedgehogProp(Canvas c) {
     if (!g.hogActive) return;
     final o = _w(g.hogX, 0);
     final k = _scale;
-    final body = Paint()..color = const Color(0xFF6E4E33);
-    final spikes = Paint()..color = const Color(0xFF4A3320);
 
-    if (g.hogCurled) {
-      // A perfect, unimpressed sphere.
-      c.drawCircle(o.translate(0, -0.13 * k), 0.14 * k, body);
-      for (int i = 0; i < 10; i++) {
-        final a = i * math.pi * 2 / 10;
-        final base = o.translate(0, -0.13 * k);
-        final tip = base +
-            Offset(math.cos(a), math.sin(a)) * 0.2 * k;
-        final p = Path()
-          ..moveTo(base.dx + math.cos(a + 0.35) * 0.11 * k,
-              base.dy + math.sin(a + 0.35) * 0.11 * k)
-          ..lineTo(tip.dx, tip.dy)
-          ..lineTo(base.dx + math.cos(a - 0.35) * 0.11 * k,
-              base.dy + math.sin(a - 0.35) * 0.11 * k)
-          ..close();
-        c.drawPath(p, spikes);
-      }
-    } else {
-      final waddle = math.sin(g.time * 12) * 1.5;
-      // Body: a trundling half-oval.
-      c.drawOval(
-          Rect.fromCenter(
-              center: o.translate(0, -0.1 * k + waddle * 0.3),
-              width: 0.34 * k,
-              height: 0.2 * k),
-          body);
-      // Back spikes.
-      for (int i = 0; i < 5; i++) {
-        final bx = o.dx - 0.12 * k + i * 0.06 * k;
-        final by = o.dy - 0.17 * k + waddle * 0.3;
-        final p = Path()
-          ..moveTo(bx - 0.03 * k, by + 0.04 * k)
-          ..lineTo(bx, by - 0.07 * k)
-          ..lineTo(bx + 0.03 * k, by + 0.04 * k)
-          ..close();
-        c.drawPath(p, spikes);
-      }
-      // Snout westward (that's where it's headed), nose, eye, legs.
-      c.drawCircle(o.translate(-0.19 * k, -0.06 * k), 0.05 * k, body);
-      c.drawCircle(o.translate(-0.23 * k, -0.06 * k), 2.2,
-          Paint()..color = Colors.black87);
-      c.drawCircle(o.translate(-0.16 * k, -0.09 * k), 1.5,
-          Paint()..color = Colors.black87);
-      final leg = Paint()
-        ..color = const Color(0xFF4A3320)
-        ..strokeWidth = 3;
-      c.drawLine(o.translate(-0.08 * k, -0.02 * k),
-          o.translate(-0.08 * k + waddle, 0), leg);
-      c.drawLine(o.translate(0.08 * k, -0.02 * k),
-          o.translate(0.08 * k - waddle, 0), leg);
+    c.save();
+    if (g.hogTurned) {
+      // Same mirror trick as _dog/_bear: it's genuinely turned around.
+      c.translate(o.dx * 2, 0);
+      c.scale(-1, 1);
+    }
+
+    final chassis = Paint()..color = const Color(0xFFEDE7D6);
+    final trim = Paint()..color = const Color(0xFFD8483C);
+    final dark = Paint()..color = const Color(0xFF2A2620);
+    final bob = math.sin(g.time * 20) * 0.4; // a little motorized jitter
+
+    // 4 wheels along the base, in front/rear pairs so the silhouette
+    // still reads clearly as a 4-wheeled base from the side.
+    final wheelY = o.dy - 0.03 * k;
+    for (final wx in [-0.17, -0.09, 0.09, 0.17]) {
+      final wc = Offset(o.dx + wx * k, wheelY);
+      c.drawCircle(wc, 0.055 * k, dark);
+      c.drawCircle(wc, 0.02 * k, Paint()..color = const Color(0xFF5A5650));
+    }
+
+    // Chassis: a squat delivery box on wheels.
+    final bodyCenter = o.translate(0, -0.15 * k + bob);
+    c.drawRRect(
+        RRect.fromRectAndRadius(
+            Rect.fromCenter(center: bodyCenter, width: 0.42 * k, height: 0.2 * k),
+            Radius.circular(0.04 * k)),
+        chassis);
+    // Cargo lid on top, trimmed in the delivery brand's red.
+    c.drawRRect(
+        RRect.fromRectAndRadius(
+            Rect.fromCenter(
+                center: o.translate(0, -0.29 * k + bob),
+                width: 0.3 * k,
+                height: 0.12 * k),
+            Radius.circular(0.03 * k)),
+        trim);
+    // A thin racing stripe along the flank.
+    c.drawRect(
+        Rect.fromCenter(center: bodyCenter, width: 0.42 * k, height: 0.03 * k),
+        trim);
+
+    // Antenna with a blinking beacon.
+    final antennaTip = o.translate(0.03 * k, -0.44 * k + bob);
+    c.drawLine(o.translate(0.03 * k, -0.35 * k + bob), antennaTip, Paint()
+      ..color = const Color(0xFF5A5650)
+      ..strokeWidth = 1.5);
+    final beaconOn = math.sin(g.time * 6) > 0;
+    c.drawCircle(antennaTip, 2.2,
+        Paint()..color = beaconOn ? const Color(0xFFFFC94A) : const Color(0xFF8A6F2A));
+
+    // Headlights up front, burning bright with a warm glow.
+    final glowPulse = 0.75 + 0.25 * math.sin(g.time * 10);
+    final lightC = o.translate(-0.19 * k, -0.14 * k + bob);
+    c.drawCircle(
+        lightC,
+        0.09 * k,
+        Paint()
+          ..color = Color.fromRGBO(255, 205, 90, 0.35 * glowPulse)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
+    c.drawCircle(lightC, 0.045 * k,
+        Paint()..color = Color.fromRGBO(255, 232, 150, glowPulse));
+    c.drawCircle(lightC, 0.02 * k, Paint()..color = Colors.white);
+
+    // A single camera "eye" above the lights, lazily scanning.
+    final eye = o.translate(-0.1 * k, -0.2 * k + bob);
+    c.drawCircle(eye, 0.035 * k, Paint()..color = const Color(0xFF1C1A18));
+    c.drawCircle(eye, 0.014 * k,
+        Paint()..color = Color.fromRGBO(120, 220, 255, glowPulse));
+
+    // Tail light out back.
+    c.drawCircle(o.translate(0.19 * k, -0.14 * k + bob), 0.02 * k,
+        Paint()..color = const Color(0xFFB33A2E));
+
+    c.restore();
+
+    // Dust puffs trailing behind, drawn outside the mirror so they
+    // always billow away from the direction of travel.
+    final trailDir = g.hogTurned ? -1.0 : 1.0;
+    final dust = Paint()..color = const Color(0xFFC9C2A8).withValues(alpha: 0.5);
+    for (int i = 0; i < 3; i++) {
+      final dx = trailDir * (0.22 + i * 0.07) * k;
+      c.drawCircle(
+          o.translate(dx, -0.02 * k - i * 2 + math.sin(g.time * 10 + i) * 2),
+          3.0 + i, dust);
     }
   }
 
@@ -3584,47 +3620,79 @@ class ScenePainter extends CustomPainter {
     }
   }
 
-  void _sledProp(Canvas c) {
+  /// A skier who carves across the level-3 yard at speed — same
+  /// mechanics as the old sled kid (Phase.sledCarry etc.), new look.
+  void _skierProp(Canvas c) {
     if (!g.sledActive) return;
     final o = _w(g.sledX, 0);
     final skin = Paint()..color = const Color(0xFFE8B99A);
-    final coat = Paint()..color = const Color(0xFF3E7ABF);
-    final wood = Paint()..color = const Color(0xFF8B5E34);
+    final jacket = Paint()..color = const Color(0xFF3E7ABF);
+    final pants = Paint()..color = const Color(0xFF2A2E38);
+    final skiPaint = Paint()
+      ..color = const Color(0xFFD8484D)
+      ..strokeWidth = 3;
 
-    // Sled runners.
-    c.drawLine(o.translate(-16, -2), o.translate(16, -2),
-        wood..strokeWidth = 3);
-    c.drawLine(o.translate(-14, 4), o.translate(-14, -4),
-        Paint()
-          ..color = const Color(0xFF6B6B6B)
-          ..strokeWidth = 2);
-    c.drawLine(o.translate(14, 4), o.translate(14, -4),
-        Paint()
-          ..color = const Color(0xFF6B6B6B)
-          ..strokeWidth = 2);
-    // The kid: bundled up, delighted.
+    final wobble = math.sin(g.time * 14) * 1.5;
+
+    // Two skis, angled downhill toward the front (it travels leftward),
+    // tips curled up.
+    for (final dy in [4.0, -3.0]) {
+      final back = o.translate(10, dy + wobble * 0.3);
+      final front = o.translate(-16, dy - 3 + wobble * 0.3);
+      final tip = o.translate(-21, dy - 9 + wobble * 0.3);
+      c.drawLine(back, front, skiPaint);
+      c.drawLine(front, tip, skiPaint);
+    }
+
+    // Legs, tucked into a crouch.
+    final leg = Paint()
+      ..color = pants.color
+      ..strokeWidth = 6;
+    final hip = o.translate(0, -20);
+    c.drawLine(hip, o.translate(-10, -1), leg);
+    c.drawLine(hip, o.translate(6, -5), leg);
+
+    // Torso, leaning into the wind.
+    c.save();
+    c.translate(o.dx, o.dy - 32);
+    c.rotate(-0.3);
     c.drawRRect(
         RRect.fromRectAndRadius(
-            Rect.fromCenter(center: o.translate(0, -14), width: 20, height: 16),
-            const Radius.circular(6)),
-        coat);
-    final head = o.translate(4, -28);
+            Rect.fromCenter(center: Offset.zero, width: 18, height: 22),
+            const Radius.circular(7)),
+        jacket);
+    c.restore();
+
+    // Head + helmet + goggles, out front leading the charge.
+    final head = o.translate(-9, -46);
     c.drawCircle(head, 8, skin);
-    c.drawArc(Rect.fromCircle(center: head, radius: 9), math.pi, math.pi * 2,
-        true, Paint()..color = const Color(0xFFD8484D));
-    // The stolen bat, held aloft in triumph, if applicable.
+    c.drawArc(Rect.fromCircle(center: head, radius: 8.5), math.pi * 1.15,
+        math.pi * 1.5, true, Paint()..color = const Color(0xFF2A2E38));
+    c.drawOval(
+        Rect.fromCenter(center: head.translate(2, -1), width: 11, height: 5),
+        Paint()..color = const Color(0xFF8AD1E8));
+
+    // Poles, planted back and trailing at speed.
+    final pole = Paint()
+      ..color = const Color(0xFF6B6B6B)
+      ..strokeWidth = 2;
+    c.drawLine(o.translate(-2, -30), o.translate(16, -6), pole);
+    c.drawLine(o.translate(2, -28), o.translate(20, -10), pole);
+
+    // The stolen bat, clamped triumphantly under an arm, if applicable.
     if (g.sledHasBat) {
       c.save();
-      c.translate(head.dx + 6, head.dy - 10);
-      c.rotate(-0.6);
+      c.translate(head.dx - 4, head.dy + 8);
+      c.rotate(-0.5);
       _batShape(c);
       c.restore();
     }
-    // Snow spray behind the runners.
+
+    // Snow spray kicked up from the trailing edge of the skis.
     final spray = Paint()..color = const Color(0xFFF3F8FC).withValues(alpha: 0.8);
     for (int i = 0; i < 4; i++) {
-      c.drawCircle(o.translate(-20 - i * 6.0, -2 + math.sin(g.time * 20 + i) * 3),
-          3, spray);
+      c.drawCircle(
+          o.translate(14 + i * 6.0, 3 + math.sin(g.time * 20 + i) * 3), 3, spray);
     }
   }
 

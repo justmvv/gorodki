@@ -23,7 +23,7 @@ enum Phase {
   manholeGrab, // the manhole resident has acquired your bat (level 2)
   crowSteal, // the crow relocates one of your pins (level 3)
   snowBury, // roof avalanche: only the head sticks out — level lost (level 3)
-  sledCarry, // a kid on a sled has made off with the bat (level 3)
+  sledCarry, // a skier has made off with the bat (level 3)
   bearChase, // the snowdrift's resident has had enough (level 3)
   coconutBonk, // a coconut has fallen from the palm tree (level 5)
   dragonBreath, // the window dragon retaliates for the broken glass (level 4)
@@ -205,8 +205,7 @@ class GameController extends ChangeNotifier {
   bool _webChecked = false; // once per throw
   double webSeed = 0; // fixes this web's asymmetric shape until it fades
   double hogX = 0;
-  bool hogCurled = false;
-  double _hogCurlT = 0;
+  bool hogTurned = false; // true once it's been bonked and is fleeing
 
   // The mole.
   bool moleOut = false;
@@ -413,7 +412,7 @@ class GameController extends ChangeNotifier {
       _say('💨', beach ? L10n.t.seaBreeze : L10n.t.windGust, ttl: 2.5);
     }
 
-    // Level 3: a kid on a sled may cross the yard.
+    // Level 3: a skier may cross the yard.
     if (winter && !sledActive && _rng.nextDouble() < 0.10) {
       sledActive = true;
       sledX = World.width + 1;
@@ -430,11 +429,11 @@ class GameController extends ChangeNotifier {
       ..angle = 0
       ..spin = -(speed * 1.1);
 
-    // Level 2 only: a hedgehog may wander across the field.
+    // Level 2 only: a delivery robot may trundle across the field.
     if (evening && !hogActive && _rng.nextDouble() < 0.12) {
       hogActive = true;
       hogX = World.gorodBack + 1.5;
-      hogCurled = false;
+      hogTurned = false;
     }
 
     // Occasionally the local air force takes an interest.
@@ -522,11 +521,12 @@ class GameController extends ChangeNotifier {
       if (coconutBandageT <= 0) coconutBandaged = false;
     }
     if (hogActive) {
-      if (hogCurled) {
-        _hogCurlT -= dt;
-        if (_hogCurlT <= 0) hogCurled = false;
+      if (hogTurned) {
+        // Point made; it heads back the way it came, headlights blazing.
+        hogX += 0.85 * dt;
+        if (hogX > World.width + 2) hogActive = false;
       } else {
-        hogX -= 0.45 * dt;
+        hogX -= 0.5 * dt;
         if (hogX < 9.0) hogActive = false;
       }
     }
@@ -827,24 +827,23 @@ class GameController extends ChangeNotifier {
         _sfx('boing');
         _say('🐱', L10n.t.catsFlee, ttl: 4);
       }
-      // The hedgehog.
+      // The delivery robot.
       if (hogActive &&
-          !hogCurled &&
+          !hogTurned &&
           (bat.x - hogX).abs() < 0.35 &&
           bat.y < 0.45) {
         bat.vy = 3.2;
         bat.vx = -bat.vx * 0.35;
-        hogCurled = true;
-        _hogCurlT = 2.5;
+        hogTurned = true;
         _throwHadContact = true;
         _sfx('boing');
-        _say('🦔', L10n.t.hedgehogMsg, ttl: 4);
+        _say('🤖', L10n.t.hedgehogMsg, ttl: 4);
       }
     }
 
     // --- Level 3 hazards --------------------------------------------------
     if (winter) {
-      // The sled kid — a low, fast horizontal intercept.
+      // The skier — a low, fast horizontal intercept.
       if (sledActive && !sledHasBat && bat.y < 0.9) {
         if ((bat.x - sledX).abs() < 0.6) {
           sledHasBat = true;
@@ -852,7 +851,7 @@ class GameController extends ChangeNotifier {
           phase = Phase.sledCarry;
           _throwHadContact = true;
           _sfx('whoosh');
-          _say('🛷', L10n.t.sledKid, ttl: 4);
+          _say('⛷️', L10n.t.sledKid, ttl: 4);
           return;
         }
       }
