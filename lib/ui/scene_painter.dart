@@ -67,6 +67,7 @@ class ScenePainter extends CustomPainter {
     _pigeon(canvas);
     _fruit(canvas);
     if (g.beach) _coconut(canvas);
+    if (g.nightmare) _dragonFireBreath(canvas);
     _drone(canvas);
     _splash(canvas);
     _eveningLight(canvas, size);
@@ -502,6 +503,10 @@ class ScenePainter extends CustomPainter {
   /// The famous accented window: curtains, geraniums, and (after the
   /// unfortunate incident) cracks and Baba Zina herself.
   void _zinaWindow(Canvas c, Rect win) {
+    if (g.nightmare) {
+      _dragonWindow(c, win);
+      return;
+    }
     // Cozy curtains.
     final curtain = Paint()..color = const Color(0xFFEED9A4);
     c.drawRect(
@@ -546,6 +551,79 @@ class ScenePainter extends CustomPainter {
       c.drawLine(ctr.translate(-3, 1), ctr.translate(3, 1),
           eye..strokeWidth = 1.4);
     }
+  }
+
+  /// Nightmare reskin of Baba Zina's window: a dragon lives there now.
+  /// It stays a pair of eyes in the dark until you break the glass, at
+  /// which point it leans out — see [_dragonFireBreath] for the actual
+  /// flame reaching across the yard.
+  void _dragonWindow(Canvas c, Rect win) {
+    // Scorched, tattered curtains.
+    final curtain = Paint()..color = const Color(0xFF2A2026);
+    c.drawRect(
+        Rect.fromLTWH(win.left, win.top, win.width * 0.16, win.height),
+        curtain);
+    c.drawRect(
+        Rect.fromLTWH(win.right - win.width * 0.16, win.top, win.width * 0.16,
+            win.height),
+        curtain);
+    // A wilted, faintly smoking plant, where geraniums used to be.
+    final potW = win.width * 0.3;
+    final pot =
+        Rect.fromLTWH(win.left + win.width * 0.35, win.bottom - 10, potW, 10);
+    c.drawRect(pot, Paint()..color = const Color(0xFF3A2E22));
+    c.drawCircle(pot.topCenter.translate(0, -5), 6,
+        Paint()..color = const Color(0xFF4A3A2E));
+
+    if (!g.windowBroken) {
+      // Just a pair of watching eyes in the dark, for now.
+      final glow = 0.5 + 0.3 * math.sin(g.time * 2);
+      final ctr = win.center;
+      for (final dx in [-4.0, 4.0]) {
+        c.drawCircle(ctr.translate(dx, -2), 2.2,
+            Paint()..color = Color.fromRGBO(255, 200, 40, 0.5 + glow * 0.4));
+      }
+      return;
+    }
+
+    final crack = Paint()
+      ..color = const Color(0xFF1B1214)
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke;
+    final ctr = win.center;
+    for (int i = 0; i < 7; i++) {
+      final a = i * math.pi * 2 / 7 + 0.4;
+      c.drawLine(ctr,
+          ctr + Offset(math.cos(a), math.sin(a)) * (win.shortestSide * 0.55),
+          crack);
+    }
+
+    // The dragon, leaning further out while actively breathing fire.
+    final lean = g.dragonBreathing ? 8.0 : 2.0;
+    final head = ctr.translate(lean, -2);
+    final scale = Paint()..color = const Color(0xFF3E6B4A);
+    c.drawOval(
+        Rect.fromCenter(center: head, width: 22, height: 15), scale);
+    c.drawOval(
+        Rect.fromCenter(center: head.translate(10, 3), width: 14, height: 8),
+        scale);
+    final horn = Paint()..color = const Color(0xFF1B1214);
+    c.drawPath(
+        Path()
+          ..moveTo(head.dx - 6, head.dy - 7)
+          ..lineTo(head.dx - 9, head.dy - 14)
+          ..lineTo(head.dx - 3, head.dy - 8)
+          ..close(),
+        horn);
+    c.drawPath(
+        Path()
+          ..moveTo(head.dx + 2, head.dy - 8)
+          ..lineTo(head.dx + 1, head.dy - 15)
+          ..lineTo(head.dx + 7, head.dy - 9)
+          ..close(),
+        horn);
+    c.drawCircle(head.translate(4, -2), 2, Paint()..color = const Color(0xFFFFD040));
+    c.drawCircle(head.translate(4, -2), 0.9, Paint()..color = Colors.black);
   }
 
   void _ground(Canvas c, Size s) {
@@ -1162,29 +1240,21 @@ class ScenePainter extends CustomPainter {
       }
     }
 
-    // Bottle, same as ever — old habits.
-    final bottleP = Paint()..color = const Color(0xFF3E7A46);
+    // Not a bottle anymore — Uncle Gena has upgraded to a proper martini,
+    // and it topples exactly the same way a bottle would.
     if (g.bottleFlying) {
       final bo = _w(g.bottleFx, g.bottleFy);
       c.save();
       c.translate(bo.dx, bo.dy);
       c.rotate(g.time * 10);
-      c.drawRRect(
-          RRect.fromRectAndRadius(const Rect.fromLTWH(-4, -12, 8, 24),
-              const Radius.circular(3)),
-          bottleP);
+      _martiniGlass(c);
       c.restore();
     } else {
       final bo = _w(World.bottleX, 0);
-      c.drawRRect(
-          RRect.fromRectAndRadius(
-              Rect.fromLTWH(bo.dx - 4, bo.dy - World.bottleH * _scale, 8,
-                  World.bottleH * _scale),
-              const Radius.circular(3)),
-          bottleP);
-      c.drawRect(
-          Rect.fromLTWH(bo.dx - 2, bo.dy - World.bottleH * _scale - 5, 4, 6),
-          bottleP);
+      c.save();
+      c.translate(bo.dx, bo.dy - World.bottleH * _scale * 0.55);
+      _martiniGlass(c);
+      c.restore();
     }
 
     // A parasol — even Uncle Gena has standards.
@@ -1353,6 +1423,52 @@ class ScenePainter extends CustomPainter {
     // A stray bubble popping.
     c.drawCircle(Offset(-2 + math.sin(g.time * 8) * 2, -9), 1.4,
         Paint()..color = const Color(0xFFFFD873));
+  }
+
+  /// A proper martini, standing in for the bottle on the beach. Drawn
+  /// centered on the local origin, stem-down.
+  void _martiniGlass(Canvas c) {
+    final glass = Paint()
+      ..color = Colors.white.withValues(alpha: 0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    // The iconic V bowl.
+    final bowl = Path()
+      ..moveTo(-9, -13)
+      ..lineTo(9, -13)
+      ..lineTo(0, -1)
+      ..close();
+    c.drawPath(bowl, glass);
+    // The cocktail itself, filled almost to the rim.
+    final liquid = Path()
+      ..moveTo(-7, -11.5)
+      ..lineTo(7, -11.5)
+      ..lineTo(0, -2.5)
+      ..close();
+    c.drawPath(liquid, Paint()..color = const Color(0xFFE8E3C8));
+    c.drawPath(
+        Path()
+          ..moveTo(-7, -11.5)
+          ..lineTo(7, -11.5)
+          ..lineTo(4.5, -8)
+          ..lineTo(-4.5, -8)
+          ..close(),
+        Paint()..color = Colors.white.withValues(alpha: 0.4));
+    // Stem and base.
+    c.drawLine(const Offset(0, -1), const Offset(0, 8),
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.5)
+          ..strokeWidth = 1.6);
+    c.drawLine(const Offset(-6, 9), const Offset(6, 9),
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.5)
+          ..strokeWidth = 2);
+    // An olive, because standards.
+    c.drawCircle(const Offset(3, -9), 2.4, Paint()..color = const Color(0xFF6E8A3E));
+    c.drawLine(const Offset(3, -9), const Offset(8, -13),
+        Paint()
+          ..color = const Color(0xFFE8E3C8)
+          ..strokeWidth = 1);
   }
 
   /// Uncle Gena on the warpath, weapon of choice held high (a broom on
@@ -1761,20 +1877,21 @@ class ScenePainter extends CustomPainter {
       }
     }
 
-    // A coconut just happened. Small consolation stars, no crawling
-    // required — this one's mostly just embarrassing.
-    if (g.coconutDazed) {
-      final tp = TextPainter(
-        text: TextSpan(
-          text: '✶ ✶',
-          style: TextStyle(
-              color: const Color(0xFFFFE082),
-              fontSize: 13 + math.sin(g.time * 9) * 2,
-              fontWeight: FontWeight.w900),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tp.paint(c, head.translate(-16, -30 + math.sin(g.time * 20) * 1.5));
+    // The bandage: a lingering souvenir of the coconut, worn with dignity
+    // for exactly ten seconds.
+    if (g.coconutBandaged) {
+      c.save();
+      c.translate(head.dx, head.dy);
+      c.rotate(-0.35);
+      c.drawRRect(
+          RRect.fromRectAndRadius(
+              const Rect.fromLTWH(-11, -3, 22, 6), const Radius.circular(3)),
+          Paint()..color = Colors.white.withValues(alpha: 0.95));
+      c.restore();
+      c.drawCircle(head.translate(7, -7), 1.8,
+          Paint()..color = const Color(0xFFE8E8E0));
+      c.drawCircle(head.translate(-3, 3), 2.2,
+          Paint()..color = const Color(0x66335577));
     }
 
     // Arms.
@@ -2503,6 +2620,58 @@ class ScenePainter extends CustomPainter {
     c.drawCircle(const Offset(2, 1), 0.9, face);
     c.drawCircle(const Offset(0, 3.5), 1.0, face);
     c.restore();
+  }
+
+  /// The window dragon's actual retaliation: a proper flame beam reaching
+  /// all the way from the broken window to wherever the player is
+  /// standing. World-space, so it works regardless of kon/half-kon.
+  void _dragonFireBreath(Canvas c) {
+    if (!g.dragonBreathing) return;
+    final src = _w(World.buildingRX + 0.85,
+        (World.windowY1 + World.windowY2) / 2 + 0.3);
+    final dst = _w(g.playerX + 0.15, 1.9);
+    final dx = dst.dx - src.dx, dy = dst.dy - src.dy;
+    final len = math.sqrt(dx * dx + dy * dy).clamp(1.0, 9999).toDouble();
+    final nx = dx / len, ny = dy / len;
+    final px = -ny, py = nx; // perpendicular, for the beam's width
+
+    const segments = 10;
+    Path buildBeam(double baseWidth, double taper) {
+      final top = <Offset>[];
+      final bot = <Offset>[];
+      for (int i = 0; i <= segments; i++) {
+        final t = i / segments;
+        final cx = src.dx + dx * t;
+        final cy = src.dy + dy * t;
+        final wobble = math.sin(g.time * 18 + t * 10) * (1 - t) * 4;
+        final w = (1 - t * taper) * baseWidth;
+        top.add(Offset(cx + px * w + px * wobble * 0.3, cy + py * w));
+        bot.add(Offset(cx - px * w, cy - py * w));
+      }
+      final path = Path()..moveTo(top.first.dx, top.first.dy);
+      for (final p in top.skip(1)) {
+        path.lineTo(p.dx, p.dy);
+      }
+      for (final p in bot.reversed) {
+        path.lineTo(p.dx, p.dy);
+      }
+      path.close();
+      return path;
+    }
+
+    c.drawPath(buildBeam(10, 0.7),
+        Paint()..color = const Color(0xFFFF5A1E).withValues(alpha: 0.75));
+    c.drawPath(buildBeam(5, 0.75),
+        Paint()..color = const Color(0xFFFFDC6E).withValues(alpha: 0.8));
+
+    // A few embers drifting free of the beam.
+    for (int i = 0; i < 5; i++) {
+      final t = (g.time * 1.3 + i * 0.37) % 1.0;
+      final cx = src.dx + dx * t + math.sin(g.time * 6 + i) * 8;
+      final cy = src.dy + dy * t - 6 + math.sin(g.time * 4 + i) * 4;
+      c.drawCircle(Offset(cx, cy), 2.0 - t * 1.4,
+          Paint()..color = Color.fromRGBO(255, 180, 80, (1 - t) * 0.8));
+    }
   }
 
   void _car(Canvas c) {

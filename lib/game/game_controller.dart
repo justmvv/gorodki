@@ -25,6 +25,7 @@ enum Phase {
   snowBury, // roof avalanche: only the head sticks out — level lost (level 3)
   sledCarry, // a kid on a sled has made off with the bat (level 3)
   coconutBonk, // a coconut has fallen from the palm tree (level 5)
+  dragonBreath, // the window dragon retaliates for the broken glass (level 4)
   cooldown, // short pause before the next throw / figure
   gameOver,
 }
@@ -197,6 +198,11 @@ class GameController extends ChangeNotifier {
   bool coconutDazed = false;
   double coconutX = 0, coconutY = 0;
   double _coconutDazedT = 0;
+  bool coconutBandaged = false;
+  double coconutBandageT = 0;
+
+  // The dragon who has been living in Baba Zina's window this whole time.
+  bool dragonBreathing = false;
 
   /// Mole animation clock for the painter (valid while [moleOut]).
   double get moleT => _eventT;
@@ -292,6 +298,8 @@ class GameController extends ChangeNotifier {
     bat.inTree = false;
     coconutFalling = false;
     coconutDazed = false;
+    coconutBandaged = false;
+    dragonBreathing = false;
     _setupFigure();
     _startPreview();
     _say('🏏',
@@ -425,6 +433,10 @@ class GameController extends ChangeNotifier {
     if (splashT > 0) splashT -= dt;
     if (alarmT > 0) alarmT -= dt;
     if (ownerWindowT > 0) ownerWindowT -= dt;
+    if (coconutBandaged) {
+      coconutBandageT -= dt;
+      if (coconutBandageT <= 0) coconutBandaged = false;
+    }
     if (hogActive) {
       if (hogCurled) {
         _hogCurlT -= dt;
@@ -498,6 +510,8 @@ class GameController extends ChangeNotifier {
         _tickSledCarry(dt);
       case Phase.coconutBonk:
         _tickCoconutBonk(dt);
+      case Phase.dragonBreath:
+        _tickDragonBreath(dt);
       case Phase.crowSteal:
         _tickCrowSteal(dt);
       case Phase.snowBury:
@@ -816,6 +830,10 @@ class GameController extends ChangeNotifier {
           _say('🪟', nightmare
               ? L10n.t.nightmareWindowCrash
               : (beach ? L10n.t.beachKioskCrash : L10n.t.windowCrash));
+          if (nightmare) {
+            _startDragonBreath();
+            return;
+          }
         } else {
           _sfx('knock');
           _say('🪟', nightmare
@@ -1330,8 +1348,11 @@ class GameController extends ChangeNotifier {
       _startBroomChase();
       return;
     }
-    final lines = L10n.t.bottleLines;
-    _say('🍾', lines[math.min(bottleHits - 1, lines.length - 1)], ttl: 4.2);
+    final lines = nightmare
+        ? L10n.t.bottleLinesNightmare
+        : (beach ? L10n.t.bottleLinesBeach : L10n.t.bottleLines);
+    _say(nightmare ? '🔥' : (beach ? '🍸' : '🍾'),
+        lines[math.min(bottleHits - 1, lines.length - 1)], ttl: 4.2);
   }
 
   // ------------------------------------------------------------------
@@ -1443,6 +1464,7 @@ class GameController extends ChangeNotifier {
         drunkardChasing = false;
         bottleHits = 0;
         _broomThreshold = 3 + _rng.nextInt(4);
+        dragonBreathing = false;
         _setupFigure();
         _sfx('fanfare');
         _say('🌕', L10n.t.level4Intro, ttl: 6);
@@ -1462,6 +1484,7 @@ class GameController extends ChangeNotifier {
         moleOut = false;
         coconutFalling = false;
         coconutDazed = false;
+        coconutBandaged = false;
         _setupFigure();
         _sfx('fanfare');
         _say('🏖️', L10n.t.level5Intro, ttl: 6);
@@ -1589,16 +1612,50 @@ class GameController extends ChangeNotifier {
       if (coconutY <= 1.75) {
         coconutFalling = false;
         coconutDazed = true;
+        playerBonked = true;
+        bonkCrawling = false;
         _coconutDazedT = 0;
         _sfx('knock');
         _say('🥥', L10n.t.coconutMsg, ttl: 3.5);
       }
     } else if (coconutDazed) {
       _coconutDazedT += dt;
-      if (_coconutDazedT > 1.6) {
+      if (_coconutDazedT < 1.0) {
+        // Clutching head, squatting, reconsidering the whole vacation.
+      } else if (_coconutDazedT < 3.4) {
+        bonkCrawling = true;
+        playerRunOffset -= dt * 2.2; // slow, humbled crawl
+      } else {
+        // Back on their feet, sporting a fresh bandage.
         coconutDazed = false;
+        playerBonked = false;
+        bonkCrawling = false;
+        playerRunOffset = 0;
+        coconutBandaged = true;
+        coconutBandageT = 10.0;
         phase = Phase.aiming;
       }
+    }
+  }
+
+  void _startDragonBreath() {
+    phase = Phase.dragonBreath;
+    _eventT = 0;
+    dragonBreathing = true;
+    playerBonked = true;
+    bonkCrawling = false;
+    bat.active = false;
+    _sfx('rumble');
+    _say('🐉', L10n.t.dragonBreathMsg, ttl: 4.5);
+  }
+
+  void _tickDragonBreath(double dt) {
+    _eventT += dt;
+    if (_eventT > 1.9) {
+      dragonBreathing = false;
+      playerBonked = false;
+      bonkCrawling = false;
+      _endThrow();
     }
   }
 

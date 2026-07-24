@@ -90,8 +90,13 @@ class GameStrings {
       ravenSteal,
       seagullSteal,
       paragliderIntercept,
-      coconutMsg;
-  final List<String> missLines, bottleLines, snowmanLines;
+      coconutMsg,
+      dragonBreathMsg;
+  final List<String> missLines,
+      bottleLines,
+      bottleLinesNightmare,
+      bottleLinesBeach,
+      snowmanLines;
 
   const GameStrings({
     required this.code,
@@ -181,8 +186,11 @@ class GameStrings {
     required this.seagullSteal,
     required this.paragliderIntercept,
     required this.coconutMsg,
+    required this.dragonBreathMsg,
     required this.missLines,
     required this.bottleLines,
+    required this.bottleLinesNightmare,
+    required this.bottleLinesBeach,
     required this.snowmanLines,
   });
 }
@@ -298,8 +306,8 @@ const en = GameStrings(
   netSnag:
       'BOING! The volleyball net is strung tight and springs the bat right back at you. A nearby team briefly applauds the form.',
   nightmareWindowCrash:
-      'CRASH! A pale face appears in the shattered window and moans about property values. (+1 penalty throw)',
-  nightmareWindowAgain: 'That window was already haunted. Now it just echoes.',
+      'CRASH! That was no ordinary window — a dragon lived behind it, and it is significantly less amused than Baba Zina ever was. (+1 penalty throw)',
+  nightmareWindowAgain: 'The dragon eyes the broken frame. Still smoldering, still watching.',
   beachKioskCrash:
       'CRASH! You\'ve hit the ice-cream kiosk. The vendor is unimpressed and charges you for a cone anyway. (+1 penalty throw)',
   beachKioskAgain: 'The kiosk window was already cracked. The vendor shrugs.',
@@ -324,6 +332,8 @@ const en = GameStrings(
       'A paraglider swoops low and snags your bat mid-air! "Sorry, mate, thermal\'s calling!"',
   coconutMsg:
       'THOCK! A coconut, dropped by that suspiciously tall palm tree, lands square on your head. You see stars, and possibly a lawyer.',
+  dragonBreathMsg:
+      'The dragon leans out of the shattered window and breathes a jet of fire straight at you! You duck, cover, and reconsider several life choices.',
   snowmanLines: [
     'The snowman lost his bucket. He is above such things.',
     'The snowman is now a third shorter. The carrot remains optimistic.',
@@ -339,6 +349,16 @@ const en = GameStrings(
     'The bottle! Uncle Gena shakes his fist: "I was saving that for a SPECIAL occasion!"',
     'Uncle Gena, tragically: "That kefir had sentimental value!"',
     'Uncle Gena stands up. Sits back down. Shakes fist in your general direction. He is running out of patience...',
+  ],
+  bottleLinesNightmare: [
+    'The cauldron! Uncle Gena\'s ghost roars: "MY LAVA IS FOR SINNERS!"',
+    'Uncle Gena, aghast: "That lava took CENTURIES to properly curse!"',
+    'Uncle Gena rises. Sits back down. Points a smoking finger at you. His patience: also cursed, also running out...',
+  ],
+  bottleLinesBeach: [
+    'The martini! Uncle Gena gasps: "Do you have ANY idea how many olives that took?!"',
+    'Uncle Gena, wounded: "That was a PREMIUM vermouth!"',
+    'Uncle Gena stands up. Sits back down. Adjusts his sunglasses menacingly. He is running out of patience...',
   ],
 );
 
@@ -452,8 +472,8 @@ const de = GameStrings(
   netSnag:
       'BOING! Das Volleyballnetz ist straff gespannt und schleudert das Schlagholz zurück. Ein Team in der Nähe applaudiert kurz der Technik.',
   nightmareWindowCrash:
-      'KRACH! Ein blasses Gesicht erscheint im zerbrochenen Fenster und jammert über die Grundstückspreise. (+1 Strafwurf)',
-  nightmareWindowAgain: 'Das Fenster war schon verflucht. Jetzt hallt es nur noch.',
+      'KRACH! Das war kein gewöhnliches Fenster — dahinter lebte ein Drache, und der ist deutlich weniger amüsiert, als Oma Sina es je war. (+1 Strafwurf)',
+  nightmareWindowAgain: 'Der Drache mustert den zerbrochenen Rahmen. Immer noch schwelend, immer noch wachsam.',
   beachKioskCrash:
       'KRACH! Du hast den Eiskiosk getroffen. Der Verkäufer ist unbeeindruckt und berechnet dir trotzdem eine Kugel. (+1 Strafwurf)',
   beachKioskAgain: 'Das Kioskfenster war schon gesprungen. Der Verkäufer zuckt mit den Schultern.',
@@ -477,6 +497,8 @@ const de = GameStrings(
       'Ein Gleitschirmflieger saust tief herab und schnappt sich dein Schlagholz mitten in der Luft! "Sorry, die Thermik ruft!"',
   coconutMsg:
       'PLONK! Eine Kokosnuss von dieser verdächtig hohen Palme landet mitten auf deinem Kopf. Du siehst Sterne, und womöglich einen Anwalt.',
+  dragonBreathMsg:
+      'Der Drache lehnt sich aus dem zerbrochenen Fenster und speit einen Feuerstoß direkt auf dich! Du duckst dich, deckst dich und überdenkst mehrere Lebensentscheidungen.',
   snowmanLines: [
     'Der Schneemann hat seinen Eimer verloren. Er steht über solchen Dingen.',
     'Der Schneemann ist jetzt ein Drittel kürzer. Die Karotte bleibt optimistisch.',
@@ -492,6 +514,16 @@ const de = GameStrings(
     'Die Flasche! Onkel Gena droht mit der Faust: "Die war für einen BESONDEREN Anlass!"',
     'Onkel Gena, tragisch: "Dieser Kefir hatte ideellen Wert!"',
     'Onkel Gena steht auf. Setzt sich wieder. Droht in deine Richtung. Seine Geduld schwindet...',
+  ],
+  bottleLinesNightmare: [
+    'Der Kessel! Onkel Genas Geist brüllt: "MEINE LAVA IST FÜR SÜNDER!"',
+    'Onkel Gena, entsetzt: "Diese Lava brauchte JAHRHUNDERTE, um richtig verflucht zu werden!"',
+    'Onkel Gena erhebt sich. Setzt sich wieder. Deutet mit rauchendem Finger auf dich. Seine Geduld: auch verflucht, auch am Ende...',
+  ],
+  bottleLinesBeach: [
+    'Der Martini! Onkel Gena japst: "Hast du eine AHNUNG, wie viele Oliven das gekostet hat?!"',
+    'Onkel Gena, verwundet: "Das war ein PREMIUM-Wermut!"',
+    'Onkel Gena steht auf. Setzt sich wieder. Rückt bedrohlich seine Sonnenbrille zurecht. Seine Geduld schwindet...',
   ],
 );
 
@@ -606,8 +638,8 @@ const es = GameStrings(
   netSnag:
       '¡BOING! La red de vóley playa está bien tensa y devuelve el bate directo hacia ti. Un equipo cercano aplaude brevemente la técnica.',
   nightmareWindowCrash:
-      '¡CRASH! Un rostro pálido aparece en la ventana rota y se lamenta del valor de la propiedad. (+1 lanzamiento de penalización)',
-  nightmareWindowAgain: 'Esa ventana ya estaba embrujada. Ahora solo hace eco.',
+      '¡CRASH! Esa no era una ventana cualquiera — detrás vivía un dragón, y está bastante menos divertido de lo que la tía Zina jamás estuvo. (+1 lanzamiento de penalización)',
+  nightmareWindowAgain: 'El dragón observa el marco roto. Todavía humeante, todavía vigilando.',
   beachKioskCrash:
       '¡CRASH! Has golpeado el quiosco de helados. Al vendedor no le impresiona y te cobra un cono de todos modos. (+1 lanzamiento de penalización)',
   beachKioskAgain: 'La ventana del quiosco ya estaba agrietada. El vendedor se encoge de hombros.',
@@ -631,6 +663,8 @@ const es = GameStrings(
       '¡Un parapente baja en picado y atrapa tu bate en pleno vuelo! "¡Perdona, me llama el térmico!"',
   coconutMsg:
       '¡PLAF! Un coco de esa palmera sospechosamente alta te cae justo en la cabeza. Ves estrellas, y posiblemente a un abogado.',
+  dragonBreathMsg:
+      '¡El dragón se asoma por la ventana rota y te lanza un chorro de fuego directo! Te agachas, te cubres y reconsideras varias decisiones de vida.',
   snowmanLines: [
     'El muñeco de nieve perdió su cubo. Está por encima de esas cosas.',
     'El muñeco de nieve es ahora un tercio más bajo. La zanahoria sigue optimista.',
@@ -646,6 +680,16 @@ const es = GameStrings(
     '¡La botella! El tío Gena agita el puño: "¡La guardaba para una ocasión ESPECIAL!"',
     'El tío Gena, trágico: "¡Ese kéfir tenía valor sentimental!"',
     'El tío Gena se levanta. Se vuelve a sentar. Agita el puño hacia ti. Se le acaba la paciencia...',
+  ],
+  bottleLinesNightmare: [
+    '¡El caldero! El fantasma del tío Gena ruge: "¡MI LAVA ES PARA LOS PECADORES!"',
+    'El tío Gena, horrorizado: "¡Esa lava tardó SIGLOS en maldecirse correctamente!"',
+    'El tío Gena se levanta. Se vuelve a sentar. Te señala con un dedo humeante. Su paciencia: también maldita, también agotándose...',
+  ],
+  bottleLinesBeach: [
+    '¡El martini! El tío Gena jadea: "¿¡Tienes IDEA de cuántas aceitunas costó eso!?"',
+    'El tío Gena, herido: "¡Ese era un vermut PREMIUM!"',
+    'El tío Gena se levanta. Se vuelve a sentar. Se ajusta las gafas de sol con aire amenazante. Se le acaba la paciencia...',
   ],
 );
 
@@ -759,8 +803,8 @@ const nl = GameStrings(
   netSnag:
       'BOING! Het volleybalnet staat strak gespannen en katapulteert de knuppel terug. Een team verderop applaudisseert kort voor de techniek.',
   nightmareWindowCrash:
-      'KRAK! Een bleek gezicht verschijnt in het gebroken raam en klaagt over de huizenprijzen. (+1 strafworp)',
-  nightmareWindowAgain: 'Dat raam was al behekst. Nu galmt het alleen maar.',
+      'KRAK! Dat was geen gewoon raam — er woonde een draak achter, en die is aanzienlijk minder vermaakt dan Baba Zina ooit was. (+1 strafworp)',
+  nightmareWindowAgain: 'De draak bekijkt het gebroken kozijn. Nog steeds smeulend, nog steeds waakzaam.',
   beachKioskCrash:
       'KRAK! Je raakte de ijskraam. De verkoper is onder de indruk noch ontroerd en rekent je toch een bolletje aan. (+1 strafworp)',
   beachKioskAgain: 'Het raam van de kraam was al gebarsten. De verkoper haalt zijn schouders op.',
@@ -784,6 +828,8 @@ const nl = GameStrings(
       'Een parapente duikt laag over en grist je knuppel zo uit de lucht! "Sorry hoor, de thermiek roept!"',
   coconutMsg:
       'PLOF! Een kokosnoot van die verdacht hoge palmboom komt recht op je hoofd terecht. Je ziet sterretjes, en mogelijk een advocaat.',
+  dragonBreathMsg:
+      'De draak leunt uit het gebroken raam en spuwt een vuurstraal recht op je af! Je duikt weg, dekt je in en overdenkt een aantal levenskeuzes.',
   snowmanLines: [
     'De sneeuwpop is zijn emmer kwijt. Hij staat boven zulke dingen.',
     'De sneeuwpop is nu een derde korter. De wortel blijft optimistisch.',
@@ -799,6 +845,16 @@ const nl = GameStrings(
     'De fles! Oom Gena schudt zijn vuist: "Die bewaarde ik voor een SPECIALE gelegenheid!"',
     'Oom Gena, tragisch: "Die kefir had emotionele waarde!"',
     'Oom Gena staat op. Gaat weer zitten. Schudt zijn vuist jouw kant op. Zijn geduld raakt op...',
+  ],
+  bottleLinesNightmare: [
+    'De ketel! Oom Gena\'s geest brult: "MIJN LAVA IS VOOR ZONDAARS!"',
+    'Oom Gena, ontzet: "Die lava deed er EEUWEN over om goed vervloekt te raken!"',
+    'Oom Gena staat op. Gaat weer zitten. Wijst met een rokende vinger naar je. Zijn geduld: ook vervloekt, ook bijna op...',
+  ],
+  bottleLinesBeach: [
+    'De martini! Oom Gena hapt naar adem: "Heb je enig IDEE hoeveel olijven dat gekost heeft?!"',
+    'Oom Gena, gekwetst: "Dat was een PREMIUM vermout!"',
+    'Oom Gena staat op. Gaat weer zitten. Schikt dreigend zijn zonnebril. Zijn geduld raakt op...',
   ],
 );
 
