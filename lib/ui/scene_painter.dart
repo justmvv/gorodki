@@ -2179,32 +2179,86 @@ class ScenePainter extends CustomPainter {
       return;
     }
     if (g.nightmare) {
-      // The raven: same silhouette as the crow, one shade darker, with a
-      // distinctly unnatural red eye.
+      // The sky dragon: big, dark, soaring in slow circles overhead —
+      // broad membrane wings with visible finger struts spread wide
+      // (gliding, not flapping frantically), horns, a tapering tail,
+      // and small clawed feet dangling beneath.
       c.save();
       c.translate(o.dx, o.dy);
       if (g.pigeon.vx > 0.1) c.scale(-1, 1);
-      final dark = Paint()..color = const Color(0xFF0E0C10);
-      final flap = math.sin(g.time * 15) * 6;
+      final dark = Paint()..color = const Color(0xFF201C24);
+      final darker = Paint()..color = const Color(0xFF14111A);
+      final flap = math.sin(g.time * 3.2) * 6; // slow, deliberate wingbeat
+
+      // Wings.
       for (final side in [-1.0, 1.0]) {
         final wing = Path()
-          ..moveTo(0, 0)
-          ..quadraticBezierTo(
-              side * 10, -4 - flap * side.sign, side * 16, 1 - flap * 0.4)
-          ..quadraticBezierTo(side * 10, 3, 0, 2)
+          ..moveTo(-2, -2)
+          ..lineTo(side * 30, -20 - flap * side.sign)
+          ..lineTo(side * 22, -6 - flap * 0.6 * side.sign)
+          ..lineTo(side * 34, -2 - flap * 0.3 * side.sign)
+          ..lineTo(side * 14, 6)
           ..close();
         c.drawPath(wing, dark);
+        final strut = Paint()
+          ..color = darker.color
+          ..strokeWidth = 1.2;
+        for (final f in [0.35, 0.65, 0.9]) {
+          c.drawLine(const Offset(-1, -1),
+              Offset(side * 30 * f, (-20 - flap * side.sign) * f), strut);
+        }
       }
-      c.drawOval(
-          Rect.fromCenter(center: Offset.zero, width: 14, height: 10), dark);
-      c.drawCircle(const Offset(-9, -2), 4, dark);
-      c.drawCircle(const Offset(-11, -3), 1.4, Paint()..color = const Color(0xFFFF3B30));
-      final beak = Path()
-        ..moveTo(-12, -2)
-        ..lineTo(-17, -1)
-        ..lineTo(-12, 1)
+
+      // Tail, tapering away behind.
+      final tail = Path()
+        ..moveTo(10, 1)
+        ..quadraticBezierTo(24, 3, 34, -2 + math.sin(g.time * 4) * 2)
+        ..lineTo(34, 2 + math.sin(g.time * 4) * 2)
+        ..quadraticBezierTo(22, 6, 10, 4)
         ..close();
-      c.drawPath(beak, Paint()..color = const Color(0xFF5A5460));
+      c.drawPath(tail, dark);
+
+      // Body.
+      c.drawOval(
+          Rect.fromCenter(center: Offset.zero, width: 26, height: 13), dark);
+      // Neck + head.
+      const head = Offset(-16, -3);
+      c.drawOval(
+          Rect.fromCenter(center: head, width: 15, height: 9), dark);
+      // Horns.
+      final horn = Paint()..color = const Color(0xFF3A3040);
+      c.drawPath(
+          Path()
+            ..moveTo(head.dx - 2, head.dy - 4)
+            ..lineTo(head.dx - 5, head.dy - 11)
+            ..lineTo(head.dx + 1, head.dy - 5)
+            ..close(),
+          horn);
+      c.drawPath(
+          Path()
+            ..moveTo(head.dx + 3, head.dy - 4)
+            ..lineTo(head.dx + 2, head.dy - 10)
+            ..lineTo(head.dx + 6, head.dy - 4)
+            ..close(),
+          horn);
+      // Jaw.
+      final jaw = Path()
+        ..moveTo(head.dx - 7, head.dy - 1)
+        ..lineTo(head.dx - 13, head.dy + 1)
+        ..lineTo(head.dx - 7, head.dy + 3)
+        ..close();
+      c.drawPath(jaw, dark);
+      // Glowing eye.
+      c.drawCircle(head.translate(-3, -2), 1.6,
+          Paint()..color = const Color(0xFFFF5A30));
+      // Small clawed legs, dangling.
+      final leg = Paint()
+        ..color = darker.color
+        ..strokeWidth = 2;
+      c.drawLine(const Offset(-2, 5),
+          Offset(-4 + math.sin(g.time * 3) * 2, 13), leg);
+      c.drawLine(const Offset(4, 5),
+          Offset(6 + math.sin(g.time * 3 + 1) * 2, 12), leg);
       c.restore();
       return;
     }

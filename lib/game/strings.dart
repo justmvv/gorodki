@@ -337,7 +337,7 @@ const en = GameStrings(
   moleMsgBeach:
       'A rogue beach ball rolls straight through the gorod, scattering your figure. Someone yells "SORRY!" from far away.',
   ravenSteal:
-      'A raven has claimed your bat. It regards you with what can only be described as contempt.',
+      'The dragon breaks off from its circling, snatches your bat mid-air, and wheels away with it.',
   seagullSteal:
       'A seagull has claimed your bat for the flock. It has done this exact maneuver before.',
   paragliderIntercept:
@@ -517,7 +517,7 @@ const de = GameStrings(
   moleMsgBeach:
       'Ein entlaufener Wasserball rollt mitten durch den Gorod und wirft deine Figur um. Jemand ruft von weitem "SORRY!".',
   ravenSteal:
-      'Ein Rabe hat dein Schlagholz beschlagnahmt. Er sieht dich mit unverhohlener Verachtung an.',
+      'Der Drache bricht aus seiner Kreisbahn aus, schnappt sich dein Schlagholz mitten in der Luft und fliegt damit davon.',
   seagullSteal:
       'Eine Möwe hat dein Schlagholz für den Schwarm beschlagnahmt. Dieses Manöver hat sie eindeutig schon geübt.',
   paragliderIntercept:
@@ -698,7 +698,7 @@ const es = GameStrings(
   moleMsgBeach:
       'Una pelota de playa fuera de control rueda directamente por el gorod, dispersando tu figura. Alguien grita "¡PERDÓN!" desde lejos.',
   ravenSteal:
-      'Un cuervo ha reclamado tu bate. Te mira con lo que solo puede describirse como desprecio.',
+      'El dragón se aparta de su vuelo en círculos, atrapa tu bate en el aire y se aleja volando con él.',
   seagullSteal:
       'Una gaviota ha reclamado tu bate para la bandada. Claramente ya ha hecho esta maniobra antes.',
   paragliderIntercept:
@@ -878,7 +878,7 @@ const nl = GameStrings(
   moleMsgBeach:
       'Een losgeslagen strandbal rolt recht door de gorod en gooit je figuur omver. Iemand roept van veraf "SORRY!".',
   ravenSteal:
-      'Een raaf heeft je knuppel opgeëist. Hij kijkt je aan met wat alleen maar minachting genoemd kan worden.',
+      'De draak breekt uit zijn cirkels, grist je knuppel midden in de lucht weg en vliegt ermee weg.',
   seagullSteal:
       'Een meeuw heeft je knuppel opgeëist voor de zwerm. Dit trucje heeft ze duidelijk al eerder gedaan.',
   paragliderIntercept:

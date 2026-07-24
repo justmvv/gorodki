@@ -104,6 +104,10 @@ class GameController extends ChangeNotifier {
   final Drone drone = Drone();
   final List<GameMessage> messages = [];
 
+  // The nightmare yard's sky dragon (reuses the [pigeon] slot), soaring
+  // in big slow circles instead of crossing straight past like a bird.
+  double dragonFlyAngle = 0;
+
   // Bat-on-the-head aftermath.
   bool playerBonked = false;
   bool bonkCrawling = false;
@@ -434,13 +438,26 @@ class GameController extends ChangeNotifier {
     // Occasionally the local air force takes an interest.
     final roll = _rng.nextDouble();
     if (roll < 0.09) {
-      pigeon
-        ..active = true
-        ..carrying = false
-        ..x = World.width + 1
-        ..y = 3.6 + _rng.nextDouble() * 1.6
-        ..vx = -3.2 - _rng.nextDouble() * 1.5
-        ..vy = 0;
+      if (nightmare) {
+        // The sky dragon doesn't cross in from an edge — it's already
+        // up there, circling. Just pick up wherever the loop is.
+        dragonFlyAngle = _rng.nextDouble() * math.pi * 2;
+        pigeon
+          ..active = true
+          ..carrying = false
+          ..x = World.width * 0.5
+          ..y = 7.6
+          ..vx = 0
+          ..vy = 0;
+      } else {
+        pigeon
+          ..active = true
+          ..carrying = false
+          ..x = World.width + 1
+          ..y = 3.6 + _rng.nextDouble() * 1.6
+          ..vx = -3.2 - _rng.nextDouble() * 1.5
+          ..vy = 0;
+      }
     } else if (roll < 0.15 && !drone.active && (level == 1 || beach)) {
       // The quadcopter flies only in good daylight (optics, warranty).
       // On the beach it's a paraglider instead — same airspace, but it
@@ -672,7 +689,8 @@ class GameController extends ChangeNotifier {
     // --- Pigeon interception -----------------------------------------
     if (pigeon.active && !pigeon.carrying) {
       final dx = bat.x - pigeon.x, dy = bat.y - pigeon.y;
-      if (dx * dx + dy * dy < 0.45) {
+      final catchR = nightmare ? 0.75 : 0.45; // the sky dragon is a lot bigger
+      if (dx * dx + dy * dy < catchR) {
         pigeon.carrying = true;
         pigeon.vx = -2.5;
         pigeon.vy = 2.8;
@@ -681,9 +699,11 @@ class GameController extends ChangeNotifier {
         _say(
             evening
                 ? '🦇'
-                : (winter || nightmare)
-                    ? '🐦‍⬛'
-                    : '🕊️',
+                : nightmare
+                    ? '🐉'
+                    : winter
+                        ? '🐦‍⬛'
+                        : '🕊️',
             evening
                 ? L10n.t.batSteal
                 : winter
@@ -1091,6 +1111,10 @@ class GameController extends ChangeNotifier {
   void _tickPigeon(double dt) {
     if (!pigeon.active) return;
     if (phase == Phase.pigeonStrike) return; // steered by _tickPigeonStrike
+    if (nightmare) {
+      _tickSkyDragon(dt);
+      return;
+    }
     if (evening && !pigeon.carrying) {
       // A bat flies nothing like a pigeon: lurching speed, zigzag flutter.
       pigeon.x += pigeon.vx * dt * (0.5 + 0.9 * math.sin(time * 7).abs());
@@ -1114,6 +1138,33 @@ class GameController extends ChangeNotifier {
         bat.active = false;
       }
     } else if (pigeon.x < -2) {
+      pigeon.active = false;
+    }
+  }
+
+  /// The nightmare yard's sky dragon: soars in big, slow circles rather
+  /// than crossing straight past like a bird. If it catches the bat it
+  /// peels out of the loop and climbs away with it instead.
+  void _tickSkyDragon(double dt) {
+    if (pigeon.carrying) {
+      pigeon.x += 3.2 * dt;
+      pigeon.y += 2.2 * dt;
+      bat.x = pigeon.x;
+      bat.y = pigeon.y - 0.4;
+      bat.angle += dt * 2;
+      if (pigeon.y > 9.5 || pigeon.x > World.width + 2) {
+        pigeon.active = false;
+        bat.active = false;
+      }
+      return;
+    }
+    dragonFlyAngle += dt * 0.6;
+    const cx = 11.5, cy = 7.4, rx = 6.5, ry = 3.4;
+    pigeon.x = cx + math.cos(dragonFlyAngle) * rx;
+    pigeon.y = cy + math.sin(dragonFlyAngle) * ry;
+    pigeon.vx = -math.sin(dragonFlyAngle);
+    if (dragonFlyAngle > math.pi * 2) {
+      // One big lap is enough — it wheels off until next time.
       pigeon.active = false;
     }
   }
