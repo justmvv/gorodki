@@ -97,7 +97,8 @@ class GameStrings {
       skeletonAttack,
       spiderCocoonMsg,
       cocoonBreakFree,
-      statsTitle;
+      statsTitle,
+      pinDanceMsg;
   final List<String> missLines,
       bottleLines,
       bottleLinesNightmare,
@@ -200,6 +201,7 @@ class GameStrings {
     required this.spiderCocoonMsg,
     required this.cocoonBreakFree,
     required this.statsTitle,
+    required this.pinDanceMsg,
     required this.missLines,
     required this.bottleLines,
     required this.bottleLinesNightmare,
@@ -359,6 +361,8 @@ const en = GameStrings(
   cocoonBreakFree:
       'With a final heave, the silk gives way. Freedom — and several new personal fears.',
   statsTitle: 'Throws by level',
+  pinDanceMsg:
+      'The gorodki blocks stack themselves into a shuffling little figure, dance a few unsettling steps, and collapse back into formation.',
   snowmanLines: [
     'The snowman lost his bucket. He is above such things.',
     'The snowman is now a third shorter. The carrot remains optimistic.',
@@ -540,6 +544,8 @@ const de = GameStrings(
   cocoonBreakFree:
       'Mit einem letzten Ruck gibt die Seide nach. Freiheit — und ein paar neue Ängste fürs Leben.',
   statsTitle: 'Würfe pro Level',
+  pinDanceMsg:
+      'Die Holzklötze türmen sich zu einer kleinen tanzenden Gestalt, machen ein paar beunruhigende Schritte und fallen zurück in Formation.',
   snowmanLines: [
     'Der Schneemann hat seinen Eimer verloren. Er steht über solchen Dingen.',
     'Der Schneemann ist jetzt ein Drittel kürzer. Die Karotte bleibt optimistisch.',
@@ -722,6 +728,8 @@ const es = GameStrings(
   cocoonBreakFree:
       'Con un último esfuerzo, la seda cede. Libertad — y varios miedos nuevos para toda la vida.',
   statsTitle: 'Tiros por nivel',
+  pinDanceMsg:
+      'Los tacos se apilan formando una figurita que baila unos pasos inquietantes y luego se derrumba de vuelta a su formación.',
   snowmanLines: [
     'El muñeco de nieve perdió su cubo. Está por encima de esas cosas.',
     'El muñeco de nieve es ahora un tercio más bajo. La zanahoria sigue optimista.',
@@ -903,6 +911,8 @@ const nl = GameStrings(
   cocoonBreakFree:
       'Met een laatste ruk geeft het spinsel mee. Vrijheid — en een paar nieuwe angsten voor het leven.',
   statsTitle: 'Worpen per level',
+  pinDanceMsg:
+      'De blokjes stapelen zich op tot een klein dansend figuurtje, zetten een paar verontrustende pasjes en zakken terug in formatie.',
   snowmanLines: [
     'De sneeuwpop is zijn emmer kwijt. Hij staat boven zulke dingen.',
     'De sneeuwpop is nu een derde korter. De wortel blijft optimistisch.',

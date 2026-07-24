@@ -1673,6 +1673,10 @@ class ScenePainter extends CustomPainter {
   // ----------------------------------------------------------------
 
   void _pins(Canvas c) {
+    if (g.phase == Phase.pinDance) {
+      _pinDance(c);
+      return;
+    }
     // Far pins first (painter's algorithm for our modest depth axis).
     final sorted = [...g.pins]
       ..sort((a, b) => b.spec.v.compareTo(a.spec.v));
@@ -1695,6 +1699,77 @@ class ScenePainter extends CustomPainter {
             _pinFlame(c, Offset(o.dx, o.dy - World.pinHeight * _scale));
           }
         }
+      }
+    }
+  }
+
+  /// Level 4's other storyline: while the player idles with the figure
+  /// still fully standing, the remaining gorodki pull themselves up
+  /// into a crude dancing humanoid for a few seconds, then settle back
+  /// into their normal spots. Purely cosmetic — the underlying pin data
+  /// (standing/removed/worldX) never changes; this only touches how
+  /// they're drawn for the duration of Phase.pinDance.
+  void _pinDance(Canvas c) {
+    final dancers = g.pins.where((p) => !p.removed).toList();
+    if (dancers.isEmpty) return;
+    final t = g.pinDanceT;
+
+    // Ease in for the first 0.7s, hold fully assembled, ease back out
+    // for the last 0.7s — so the blocks fly together and apart instead
+    // of snapping.
+    double formT;
+    if (t < 0.7) {
+      formT = (t / 0.7).clamp(0.0, 1.0);
+    } else if (t > 4.3) {
+      formT = ((5.0 - t) / 0.7).clamp(0.0, 1.0);
+    } else {
+      formT = 1.0;
+    }
+    final ease = formT * formT * (3 - 2 * formT);
+
+    const centerX = (World.gorodFront + World.gorodBack) / 2;
+    const bodySlots = [
+      Offset(0, 1.55), // head
+      Offset(0, 1.05), // torso
+      Offset(-0.4, 1.2), // left arm
+      Offset(0.4, 1.2), // right arm
+      Offset(-0.18, 0.35), // left leg
+      Offset(0.18, 0.35), // right leg
+    ];
+
+    for (int i = 0; i < dancers.length; i++) {
+      final p = dancers[i];
+      final depthDx = (p.spec.v - 1) * 0.07;
+      final standX = p.worldX + depthDx;
+      const standY = World.pinHeight / 2;
+
+      double slotDx, slotDy, wiggleAngle;
+      if (i < bodySlots.length) {
+        final slot = bodySlots[i];
+        final freq = 3.0 + i * 0.7;
+        final phase = i * 1.7;
+        final amp = i == 0 ? 0.05 : 0.13;
+        final wiggle = math.sin(g.time * freq + phase) * amp;
+        slotDx = slot.dx + wiggle * (i.isOdd ? 1 : -1);
+        slotDy = slot.dy + math.sin(g.time * 4 + phase) * 0.06;
+        wiggleAngle = math.sin(g.time * freq + phase) * (i == 0 ? 0.15 : 0.55);
+      } else {
+        // Extra blocks beyond the 6 body slots just orbit the head —
+        // a little entourage of sparks.
+        final orbitAngle = g.time * 2 + i * (math.pi * 2 / 3);
+        slotDx = math.cos(orbitAngle) * 0.55;
+        slotDy = 1.55 + math.sin(orbitAngle) * 0.3;
+        wiggleAngle = orbitAngle;
+      }
+
+      final worldX = standX + (centerX + slotDx - standX) * ease;
+      final worldY = standY + (slotDy - standY) * ease;
+      final angle = wiggleAngle * ease;
+
+      final o = _w(worldX, worldY);
+      _pinAt(c, o, angle, depth: p.spec.v);
+      if (g.nightmare) {
+        _pinFlame(c, Offset(o.dx, o.dy - World.pinHeight * _scale * 0.5));
       }
     }
   }

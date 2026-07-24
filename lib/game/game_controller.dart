@@ -29,6 +29,7 @@ enum Phase {
   dragonBreath, // the window dragon retaliates for the broken glass (level 4)
   skeletonAttack, // three skeletons rise up and shuffle the player off (level 4)
   spiderCocoon, // a spider descends and wraps an idle player in silk (level 4)
+  pinDance, // the standing gorodki assemble into a dancing figure (level 4)
   cooldown, // short pause before the next throw / figure
   gameOver,
 }
@@ -242,6 +243,17 @@ class GameController extends ChangeNotifier {
   /// actual start of the event rather than the ambient clock.
   double get dragonBreathT => _eventT;
 
+  // The nightmare yard's other storyline: every so often, while the
+  // player idles with the figure still fully standing, the gorodki pull
+  // themselves into a little dancing humanoid, then settle back down.
+  // Purely cosmetic — never touches the actual pin data.
+  double _pinDanceCheckT = 0;
+  double _pinDanceThreshold = 10; // randomized on each use, see below
+
+  /// Pin-dance animation clock for the painter (valid while
+  /// `phase == Phase.pinDance`).
+  double get pinDanceT => _eventT;
+
   // Window (or, on the beach, the invisible ice-cream kiosk).
   bool windowBroken = false;
   bool _kioskChecked = false; // once per throw, so the beach ding doesn't spam
@@ -317,6 +329,8 @@ class GameController extends ChangeNotifier {
     _levelStartThrows = 0;
     levelThrowCounts = List.filled(5, 0);
     levelTitleT = 10;
+    _pinDanceCheckT = 0;
+    _pinDanceThreshold = 10 + _rng.nextDouble() * 12;
     windowBroken = false;
     bottleHits = 0;
     carHits = 0;
@@ -617,6 +631,8 @@ class GameController extends ChangeNotifier {
         _tickSkeletonAttack(dt);
       case Phase.spiderCocoon:
         _tickSpiderCocoon(dt);
+      case Phase.pinDance:
+        _tickPinDance(dt);
       case Phase.crowSteal:
         _tickCrowSteal(dt);
       case Phase.snowBury:
@@ -634,6 +650,16 @@ class GameController extends ChangeNotifier {
               _startSpiderCocoon();
             } else {
               _startPigeonStrike();
+            }
+          } else if (nightmare) {
+            // A separate, purely cosmetic storyline: every so often the
+            // still-standing gorodki pull themselves into a little
+            // dancing figure, then settle back into place. Never fires
+            // in the same frame as the cocoon idle-punishment above.
+            _pinDanceCheckT += dt;
+            if (_pinDanceCheckT > _pinDanceThreshold &&
+                pins.where((p) => !p.removed).every((p) => p.standing)) {
+              _startPinDance();
             }
           }
         }
@@ -1759,6 +1785,8 @@ class GameController extends ChangeNotifier {
         figureIndex = 0;
         _levelStartThrows = throwsTotal;
         levelTitleT = 10;
+        _pinDanceCheckT = 0;
+        _pinDanceThreshold = 10 + _rng.nextDouble() * 12;
         manholeManUp = false;
         lampBroken = false;
         lampBroken2 = false;
@@ -2089,6 +2117,24 @@ class GameController extends ChangeNotifier {
         phase = Phase.aiming;
         _say('🕸️', L10n.t.cocoonBreakFree, ttl: 3);
       }
+    }
+  }
+
+  void _startPinDance() {
+    phase = Phase.pinDance;
+    _eventT = 0;
+    _sfx('whoosh');
+    _say('💃', L10n.t.pinDanceMsg, ttl: 4.5);
+  }
+
+  void _tickPinDance(double dt) {
+    _eventT += dt;
+    if (_eventT > 5.0) {
+      // Settled back into formation — schedule the next chance and
+      // hand control back to the player exactly as it was.
+      _pinDanceCheckT = 0;
+      _pinDanceThreshold = 10 + _rng.nextDouble() * 12;
+      phase = Phase.aiming;
     }
   }
 
