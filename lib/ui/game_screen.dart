@@ -364,7 +364,8 @@ class _GameScreenState extends State<GameScreen>
               Text(L10n.t.goCoo,
                   style: const TextStyle(
                       fontSize: 13, color: Color(0xFF8A6D3B))),
-              const SizedBox(height: 16),
+              _buildStatsTable(),
+              const SizedBox(height: 4),
               FilledButton(
                 onPressed: game.newGame,
                 child: Text(L10n.t.playAgain),
@@ -372,6 +373,84 @@ class _GameScreenState extends State<GameScreen>
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Per-level throw breakdown, shown once all 5 levels are cleared.
+  Widget _buildStatsTable() {
+    const flags = ['☀️', '🌇', '❄️', '🌕', '🏖️'];
+    final names = [
+      L10n.t.level1Name,
+      L10n.t.level2Name,
+      L10n.t.level3Name,
+      L10n.t.level4Name,
+      L10n.t.level5Name,
+    ];
+    final counts = game.levelThrowCounts;
+    final total = counts.fold<int>(0, (a, b) => a + b);
+    const labelStyle = TextStyle(fontSize: 12, color: Color(0xFF4A3418));
+    const boldStyle = TextStyle(
+        fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF4A3418));
+
+    TableRow row(String label, String value, {bool bold = false}) {
+      return TableRow(children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Text(label,
+              style: bold ? boldStyle : labelStyle,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Text(value,
+              textAlign: TextAlign.right, style: bold ? boldStyle : labelStyle),
+        ),
+      ]);
+    }
+
+    return Container(
+      width: 260,
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF8A6D3B), width: 1),
+      ),
+      child: Column(
+        children: [
+          Text(L10n.t.statsTitle,
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4A3418))),
+          const SizedBox(height: 6),
+          Table(
+            columnWidths: const {0: FlexColumnWidth(3), 1: FlexColumnWidth(1)},
+            children: [
+              for (int i = 0; i < 5; i++)
+                row('${flags[i]} ${names[i]}', '${counts[i]}'),
+              TableRow(children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 2),
+                  child: Divider(
+                      color: const Color(0xFF8A6D3B).withValues(alpha: 0.6),
+                      height: 1),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 2),
+                  child: Divider(
+                      color: const Color(0xFF8A6D3B).withValues(alpha: 0.6),
+                      height: 1),
+                ),
+              ]),
+              row(L10n.t.throwsLabel, '$total', bold: true),
+            ],
+          ),
+        ],
       ),
     );
   }

@@ -96,7 +96,8 @@ class GameStrings {
       bearChase,
       skeletonAttack,
       spiderCocoonMsg,
-      cocoonBreakFree;
+      cocoonBreakFree,
+      statsTitle;
   final List<String> missLines,
       bottleLines,
       bottleLinesNightmare,
@@ -198,6 +199,7 @@ class GameStrings {
     required this.skeletonAttack,
     required this.spiderCocoonMsg,
     required this.cocoonBreakFree,
+    required this.statsTitle,
     required this.missLines,
     required this.bottleLines,
     required this.bottleLinesNightmare,
@@ -356,6 +358,7 @@ const en = GameStrings(
       'A monstrous spider descends from above on a thread of silk and wraps you head to toe in webbing. You are, for the moment, extremely stuck.',
   cocoonBreakFree:
       'With a final heave, the silk gives way. Freedom — and several new personal fears.',
+  statsTitle: 'Throws by level',
   snowmanLines: [
     'The snowman lost his bucket. He is above such things.',
     'The snowman is now a third shorter. The carrot remains optimistic.',
@@ -536,6 +539,7 @@ const de = GameStrings(
       'Eine monströse Spinne lässt sich an einem Seidenfaden herab und wickelt dich von Kopf bis Fuß in Spinnweben ein. Du steckst, vorerst, gründlich fest.',
   cocoonBreakFree:
       'Mit einem letzten Ruck gibt die Seide nach. Freiheit — und ein paar neue Ängste fürs Leben.',
+  statsTitle: 'Würfe pro Level',
   snowmanLines: [
     'Der Schneemann hat seinen Eimer verloren. Er steht über solchen Dingen.',
     'Der Schneemann ist jetzt ein Drittel kürzer. Die Karotte bleibt optimistisch.',
@@ -717,6 +721,7 @@ const es = GameStrings(
       'Una araña monstruosa desciende desde arriba por un hilo de seda y te envuelve de pies a cabeza en telaraña. Por el momento, estás completamente atrapado.',
   cocoonBreakFree:
       'Con un último esfuerzo, la seda cede. Libertad — y varios miedos nuevos para toda la vida.',
+  statsTitle: 'Tiros por nivel',
   snowmanLines: [
     'El muñeco de nieve perdió su cubo. Está por encima de esas cosas.',
     'El muñeco de nieve es ahora un tercio más bajo. La zanahoria sigue optimista.',
@@ -897,6 +902,7 @@ const nl = GameStrings(
       'Een monsterlijke spin daalt af aan een zijden draad en wikkelt je van top tot teen in spinrag. Je zit, voorlopig, grondig vast.',
   cocoonBreakFree:
       'Met een laatste ruk geeft het spinsel mee. Vrijheid — en een paar nieuwe angsten voor het leven.',
+  statsTitle: 'Worpen per level',
   snowmanLines: [
     'De sneeuwpop is zijn emmer kwijt. Hij staat boven zulke dingen.',
     'De sneeuwpop is nu een derde korter. De wortel blijft optimistisch.',

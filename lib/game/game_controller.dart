@@ -273,6 +273,10 @@ class GameController extends ChangeNotifier {
   bool get showTutorial =>
       phase == Phase.aiming && throwsTotal == _levelStartThrows && !aimingDrag;
 
+  /// Throws taken on each of the 5 levels, filled in as each one wraps
+  /// up (for the end-of-game stats table).
+  List<int> levelThrowCounts = List.filled(5, 0);
+
   GameController() {
     _broomThreshold = 3 + _rng.nextInt(4);
     _bearThreshold = 3 + _rng.nextInt(3);
@@ -307,6 +311,7 @@ class GameController extends ChangeNotifier {
     figureIndex = 0;
     throwsTotal = 0;
     _levelStartThrows = 0;
+    levelThrowCounts = List.filled(5, 0);
     windowBroken = false;
     bottleHits = 0;
     carHits = 0;
@@ -1689,6 +1694,7 @@ class GameController extends ChangeNotifier {
     if (figureIndex >= kFigures.length - 1) {
       if (level == 1) {
         // Dusk settles over the yard — level 2 begins.
+        levelThrowCounts[0] = throwsTotal - _levelStartThrows;
         level = 2;
         figureIndex = 0;
         _levelStartThrows = throwsTotal;
@@ -1713,6 +1719,7 @@ class GameController extends ChangeNotifier {
       }
       if (level == 2) {
         // Overnight, the whole yard turns white — level 3 begins.
+        levelThrowCounts[1] = throwsTotal - _levelStartThrows;
         level = 3;
         figureIndex = 0;
         _levelStartThrows = throwsTotal;
@@ -1739,6 +1746,7 @@ class GameController extends ChangeNotifier {
       }
       if (level == 3) {
         // A blood moon rises over the yard — level 4 begins.
+        levelThrowCounts[2] = throwsTotal - _levelStartThrows;
         level = 4;
         figureIndex = 0;
         _levelStartThrows = throwsTotal;
@@ -1775,6 +1783,7 @@ class GameController extends ChangeNotifier {
       }
       if (level == 4) {
         // Dawn breaks, and mercifully, over golden sand — level 5 begins.
+        levelThrowCounts[3] = throwsTotal - _levelStartThrows;
         level = 5;
         figureIndex = 0;
         _levelStartThrows = throwsTotal;
@@ -1798,6 +1807,7 @@ class GameController extends ChangeNotifier {
         _startPreview();
         return;
       }
+      levelThrowCounts[4] = throwsTotal - _levelStartThrows;
       phase = Phase.gameOver;
       _sfx('gameover');
       _say('🏆', tr(L10n.t.gameOverMsg, {'n': '$throwsTotal'}), ttl: 8);
