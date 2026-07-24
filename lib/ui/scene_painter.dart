@@ -3132,9 +3132,12 @@ class ScenePainter extends CustomPainter {
     }
   }
 
-  /// A small 4-wheeled delivery robot that trundles across the level-2
-  /// yard, headlights blazing. If the bat clips it, it doesn't curl up —
-  /// it turns tail and drives off the way it came.
+  /// A small 6-wheeled sidewalk delivery rover that trundles across the
+  /// level-2 yard: rounded white cargo pod on a glossy black chassis,
+  /// twin vertical light strips up front, a little sensor knob on the
+  /// hood, and a tall antenna with a flag on top. Generic rover look —
+  /// no branding. If the bat clips it, it doesn't curl up — it turns
+  /// tail and drives off the way it came.
   void _hedgehogProp(Canvas c) {
     if (!g.hogActive) return;
     final o = _w(g.hogX, 0);
@@ -3147,72 +3150,89 @@ class ScenePainter extends CustomPainter {
       c.scale(-1, 1);
     }
 
-    final chassis = Paint()..color = const Color(0xFFEDE7D6);
-    final trim = Paint()..color = const Color(0xFFD8483C);
-    final dark = Paint()..color = const Color(0xFF2A2620);
+    final pod = Paint()..color = const Color(0xFFEDEAE2);
+    final podShade = Paint()..color = const Color(0xFFD8D4C6);
+    final chassisP = Paint()..color = const Color(0xFF1C1A1C);
+    final dark = Paint()..color = const Color(0xFF201E1E);
     final bob = math.sin(g.time * 20) * 0.4; // a little motorized jitter
 
-    // 4 wheels along the base, in front/rear pairs so the silhouette
-    // still reads clearly as a 4-wheeled base from the side.
-    final wheelY = o.dy - 0.03 * k;
-    for (final wx in [-0.17, -0.09, 0.09, 0.17]) {
+    // 6 small wheels along the base, evenly spaced, so the silhouette
+    // reads clearly as a 6-wheeled rover from the side.
+    final wheelY = o.dy - 0.025 * k;
+    for (final wx in [-0.20, -0.12, -0.04, 0.04, 0.12, 0.20]) {
       final wc = Offset(o.dx + wx * k, wheelY);
-      c.drawCircle(wc, 0.055 * k, dark);
-      c.drawCircle(wc, 0.02 * k, Paint()..color = const Color(0xFF5A5650));
+      c.drawCircle(wc, 0.042 * k, dark);
+      c.drawCircle(wc, 0.015 * k, Paint()..color = const Color(0xFF4A4744));
     }
 
-    // Chassis: a squat delivery box on wheels.
-    final bodyCenter = o.translate(0, -0.15 * k + bob);
+    // Chassis: the glossy black lower deck the pod sits on.
+    final chassisCenter = o.translate(0, -0.13 * k + bob);
     c.drawRRect(
         RRect.fromRectAndRadius(
-            Rect.fromCenter(center: bodyCenter, width: 0.42 * k, height: 0.2 * k),
-            Radius.circular(0.04 * k)),
-        chassis);
-    // Cargo lid on top, trimmed in the delivery brand's red.
+            Rect.fromCenter(center: chassisCenter, width: 0.46 * k, height: 0.15 * k),
+            Radius.circular(0.05 * k)),
+        chassisP);
+
+    // Twin vertical light strips set into the chassis, up front.
+    final glowPulse = 0.75 + 0.25 * math.sin(g.time * 10);
+    for (final lx in [-0.16, -0.09]) {
+      final stripC = o.translate(lx * k, -0.13 * k + bob);
+      c.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromCenter(center: stripC, width: 0.05 * k, height: 0.16 * k),
+              Radius.circular(0.02 * k)),
+          Paint()
+            ..color = Color.fromRGBO(190, 230, 255, 0.4 * glowPulse)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
+      c.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromCenter(center: stripC, width: 0.022 * k, height: 0.1 * k),
+              Radius.circular(0.01 * k)),
+          Paint()..color = Color.fromRGBO(225, 245, 255, glowPulse));
+    }
+
+    // Cargo pod on top: rounded, set back slightly from the front deck.
+    final podCenter = o.translate(0.02 * k, -0.28 * k + bob);
+    c.drawRRect(
+        RRect.fromRectAndRadius(
+            Rect.fromCenter(center: podCenter, width: 0.38 * k, height: 0.22 * k),
+            Radius.circular(0.08 * k)),
+        pod);
+    // A soft shading band along the base of the pod for a bit of form.
     c.drawRRect(
         RRect.fromRectAndRadius(
             Rect.fromCenter(
-                center: o.translate(0, -0.29 * k + bob),
-                width: 0.3 * k,
-                height: 0.12 * k),
-            Radius.circular(0.03 * k)),
-        trim);
-    // A thin racing stripe along the flank.
-    c.drawRect(
-        Rect.fromCenter(center: bodyCenter, width: 0.42 * k, height: 0.03 * k),
-        trim);
+                center: podCenter.translate(0, 0.07 * k),
+                width: 0.36 * k,
+                height: 0.05 * k),
+            Radius.circular(0.02 * k)),
+        podShade);
 
-    // Antenna with a blinking beacon.
-    final antennaTip = o.translate(0.03 * k, -0.44 * k + bob);
-    c.drawLine(o.translate(0.03 * k, -0.35 * k + bob), antennaTip, Paint()
-      ..color = const Color(0xFF5A5650)
-      ..strokeWidth = 1.5);
-    final beaconOn = math.sin(g.time * 6) > 0;
-    c.drawCircle(antennaTip, 2.2,
-        Paint()..color = beaconOn ? const Color(0xFFFFC94A) : const Color(0xFF8A6F2A));
+    // A small grey sensor knob on the hood, front of the pod.
+    final knob = o.translate(-0.14 * k, -0.22 * k + bob);
+    c.drawCircle(knob, 0.028 * k, Paint()..color = const Color(0xFF8A8680));
+    c.drawCircle(knob, 0.014 * k, Paint()..color = const Color(0xFF5A5650));
 
-    // Headlights up front, burning bright with a warm glow.
-    final glowPulse = 0.75 + 0.25 * math.sin(g.time * 10);
-    final lightC = o.translate(-0.19 * k, -0.14 * k + bob);
-    c.drawCircle(
-        lightC,
-        0.09 * k,
+    // A tall, gently swaying antenna with a little flag on top.
+    final sway = math.sin(g.time * 2.5) * 0.02 * k;
+    final antennaBase = o.translate(-0.06 * k, -0.38 * k + bob);
+    final antennaTip = Offset(o.dx - 0.03 * k + sway, o.dy - 0.62 * k + bob);
+    c.drawPath(
+        Path()
+          ..moveTo(antennaBase.dx, antennaBase.dy)
+          ..quadraticBezierTo(antennaTip.dx - 0.01 * k,
+              (antennaBase.dy + antennaTip.dy) / 2, antennaTip.dx, antennaTip.dy),
         Paint()
-          ..color = Color.fromRGBO(255, 205, 90, 0.35 * glowPulse)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
-    c.drawCircle(lightC, 0.045 * k,
-        Paint()..color = Color.fromRGBO(255, 232, 150, glowPulse));
-    c.drawCircle(lightC, 0.02 * k, Paint()..color = Colors.white);
-
-    // A single camera "eye" above the lights, lazily scanning.
-    final eye = o.translate(-0.1 * k, -0.2 * k + bob);
-    c.drawCircle(eye, 0.035 * k, Paint()..color = const Color(0xFF1C1A18));
-    c.drawCircle(eye, 0.014 * k,
-        Paint()..color = Color.fromRGBO(120, 220, 255, glowPulse));
-
-    // Tail light out back.
-    c.drawCircle(o.translate(0.19 * k, -0.14 * k + bob), 0.02 * k,
-        Paint()..color = const Color(0xFFB33A2E));
+          ..color = const Color(0xFF2A2726)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.6);
+    c.drawPath(
+        Path()
+          ..moveTo(antennaTip.dx, antennaTip.dy)
+          ..lineTo(antennaTip.dx - 0.08 * k + sway * 1.5, antennaTip.dy + 0.025 * k)
+          ..lineTo(antennaTip.dx, antennaTip.dy + 0.05 * k)
+          ..close(),
+        Paint()..color = const Color(0xFFD8483C));
 
     c.restore();
 
