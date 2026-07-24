@@ -99,4 +99,8 @@ class World {
   // The unnaturally tall palm right by the player, in the corner — the
   // only place coconuts are allowed to fall from.
   static const double nearPalmX = 0.9;
+
+  // --- Level 4: the nightmare yard ---------------------------------------
+  // Where the skeleton trio claws its way up when they've had enough.
+  static const List<double> skeletonRiseX = [4.6, 7.4, 10.6];
 }

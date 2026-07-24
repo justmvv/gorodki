@@ -65,12 +65,14 @@ class ScenePainter extends CustomPainter {
     _pins(canvas);
     _mole(canvas);
     _crowSteal(canvas);
+    if (g.skeletonsOut) _skeletons(canvas);
     _player(canvas);
     _bat(canvas);
     _pigeon(canvas);
     _fruit(canvas);
     if (g.beach) _coconut(canvas);
     if (g.nightmare) _dragonFireBreath(canvas);
+    if (g.phase == Phase.spiderCocoon) _spiderDescent(canvas);
     _drone(canvas);
     _splash(canvas);
     _eveningLight(canvas, size);
@@ -1730,6 +1732,39 @@ class ScenePainter extends CustomPainter {
       ..color = g.nightmare
           ? const Color(0xFF0E0D12)
           : (g.beach ? const Color(0xFFE8543C) : const Color(0xFF444B54));
+
+    // Wrapped up by the spider — takes priority over everything else.
+    if (g.playerCocooned) {
+      final wiggle = math.sin(g.time * 12) * (1 - g.cocoonWrap * 0.6) * 3;
+      final silk = Paint()..color = const Color(0xFFE9E3D6);
+      final wrapH = 12 + 46 * g.cocoonWrap;
+      final center = Offset(o.dx + wiggle, o.dy - 8 - wrapH / 2);
+      c.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromCenter(center: center, width: 22, height: wrapH),
+              const Radius.circular(11)),
+          silk);
+      // Cross-hatched wrap lines.
+      final strand = Paint()
+        ..color = const Color(0xFFCFC8B4)
+        ..strokeWidth = 1.3;
+      for (int i = 0; i < 5; i++) {
+        final ly = center.dy - wrapH / 2 + wrapH * (i / 4);
+        c.drawLine(Offset(center.dx - 11, ly + 5),
+            Offset(center.dx + 11, ly - 5), strand);
+      }
+      // Wide, terrified eyes, once mostly wrapped.
+      if (g.cocoonWrap > 0.55) {
+        final eyeY = center.dy - wrapH / 2 + 9;
+        for (final dx in [-4.0, 4.0]) {
+          c.drawCircle(Offset(center.dx + dx, eyeY), 2.4,
+              Paint()..color = Colors.white);
+          c.drawCircle(Offset(center.dx + dx, eyeY), 1.1,
+              Paint()..color = Colors.black);
+        }
+      }
+      return;
+    }
 
     // Special poses after the bat's unscheduled return.
     if (g.playerBonked) {
@@ -3508,6 +3543,103 @@ class ScenePainter extends CustomPainter {
               Radius.circular(w / 3)),
           Paint()..color = const Color(0xFFE7D3AE));
       c.restore();
+    }
+  }
+
+  /// The skeleton trio, clawing their way up out of the ground. Each one
+  /// is clipped to the ground line and translated down by however much
+  /// of it hasn't "risen" yet, so it genuinely looks like it's emerging
+  /// from the dirt rather than just fading in.
+  void _skeletons(Canvas c) {
+    for (int i = 0; i < 3; i++) {
+      final frac = g.skeletonRiseFrac[i];
+      if (frac <= 0) continue;
+      final o = _w(g.skeletonX[i], 0);
+      const riseHeight = 66.0;
+      c.save();
+      c.clipRect(Rect.fromLTRB(-9999, -9999, 9999, _groundY + 1));
+      c.translate(0, (1 - frac) * riseHeight);
+      _skeletonShape(c, o, i);
+      c.restore();
+    }
+  }
+
+  void _skeletonShape(Canvas c, Offset o, int i) {
+    final bone = Paint()..color = const Color(0xFFE8E2D0);
+    final dark = Paint()..color = const Color(0xFF16121A);
+    final shuffle = math.sin(g.time * 6 + i * 2.1) * 3;
+    final legP = Paint()
+      ..color = bone.color
+      ..strokeWidth = 4;
+    final armP = Paint()
+      ..color = bone.color
+      ..strokeWidth = 3.5;
+    // Legs.
+    c.drawLine(
+        Offset(o.dx, o.dy - 30), Offset(o.dx - 6 - shuffle, o.dy), legP);
+    c.drawLine(
+        Offset(o.dx, o.dy - 30), Offset(o.dx + 6 + shuffle, o.dy), legP);
+    // Ribcage.
+    c.drawRRect(
+        RRect.fromRectAndRadius(Rect.fromLTWH(o.dx - 9, o.dy - 54, 18, 26),
+            const Radius.circular(4)),
+        bone);
+    for (int r = 0; r < 3; r++) {
+      c.drawLine(Offset(o.dx - 8, o.dy - 48 + r * 7),
+          Offset(o.dx + 8, o.dy - 48 + r * 7),
+          Paint()
+            ..color = dark.color
+            ..strokeWidth = 1.4);
+    }
+    // Arms, reaching forward.
+    c.drawLine(Offset(o.dx - 8, o.dy - 50), Offset(o.dx - 16 - shuffle, o.dy - 38),
+        armP);
+    c.drawLine(Offset(o.dx + 8, o.dy - 50), Offset(o.dx + 16 + shuffle, o.dy - 38),
+        armP);
+    // Skull.
+    final skull = Offset(o.dx, o.dy - 62);
+    c.drawCircle(skull, 9, bone);
+    c.drawCircle(skull.translate(-3, -1), 1.6, dark);
+    c.drawCircle(skull.translate(3, -1), 1.6, dark);
+    c.drawRect(
+        Rect.fromCenter(center: skull.translate(0, 5), width: 6, height: 3),
+        dark);
+  }
+
+  /// The nightmare yard's spider, descending on idle players to wrap
+  /// them up. World-space, tracks wherever the player is standing.
+  void _spiderDescent(Canvas c) {
+    final anchor = _w(g.spiderCocoonX, 9.4);
+    final o = _w(g.spiderCocoonX, g.spiderCocoonY);
+    final sway = math.sin(g.time * 2.4) * 6;
+    final pos = o.translate(sway, 0);
+    c.drawLine(anchor, pos,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.55)
+          ..strokeWidth = 1.3);
+
+    final body = Paint()..color = const Color(0xFF1B1420);
+    c.drawOval(
+        Rect.fromCenter(center: pos, width: 26, height: 32), body);
+    c.drawCircle(pos.translate(0, -16), 11, body);
+    for (final dx in [-4.0, -1.3, 1.3, 4.0]) {
+      c.drawCircle(pos.translate(dx, -18), 1.4,
+          Paint()..color = const Color(0xFFFF3B30));
+    }
+    final leg = Paint()
+      ..color = body.color
+      ..strokeWidth = 2.4;
+    for (int i = 0; i < 4; i++) {
+      final la = (i - 1.5) * 0.55;
+      final flex = math.sin(g.time * 8 + i) * 4;
+      c.drawLine(pos, pos + Offset(math.cos(la) * 20 + flex, math.sin(la) * 20 - 6),
+          leg);
+      c.drawLine(
+          pos,
+          pos +
+              Offset(math.cos(math.pi - la) * 20 - flex,
+                  math.sin(math.pi - la) * 20 - 6),
+          leg);
     }
   }
 

@@ -93,7 +93,10 @@ class GameStrings {
       coconutMsg,
       dragonBreathMsg,
       catsFlee,
-      bearChase;
+      bearChase,
+      skeletonAttack,
+      spiderCocoonMsg,
+      cocoonBreakFree;
   final List<String> missLines,
       bottleLines,
       bottleLinesNightmare,
@@ -192,6 +195,9 @@ class GameStrings {
     required this.dragonBreathMsg,
     required this.catsFlee,
     required this.bearChase,
+    required this.skeletonAttack,
+    required this.spiderCocoonMsg,
+    required this.cocoonBreakFree,
     required this.missLines,
     required this.bottleLines,
     required this.bottleLinesNightmare,
@@ -344,6 +350,12 @@ const en = GameStrings(
       'You hit the trash bin! Two extremely startled cats launch out, backs arched, and vanish in opposite directions.',
   bearChase:
       'The snowdrift erupts! A very large brown bear climbs out and chases you off the field. (+1 penalty throw)',
+  skeletonAttack:
+      'The ground splits open — THREE SKELETONS climb out, bones rattling, and shuffle you right off the field. (+1 penalty throw)',
+  spiderCocoonMsg:
+      'A monstrous spider descends from above on a thread of silk and wraps you head to toe in webbing. You are, for the moment, extremely stuck.',
+  cocoonBreakFree:
+      'With a final heave, the silk gives way. Freedom — and several new personal fears.',
   snowmanLines: [
     'The snowman lost his bucket. He is above such things.',
     'The snowman is now a third shorter. The carrot remains optimistic.',
@@ -518,6 +530,12 @@ const de = GameStrings(
       'Du hast den Mülleimer getroffen! Zwei zutiefst erschrockene Katzen schießen heraus, Rücken hochgestellt, und verschwinden in entgegengesetzte Richtungen.',
   bearChase:
       'Die Schneewehe explodiert! Ein sehr großer Braunbär klettert heraus und jagt dich vom Feld. (+1 Strafwurf)',
+  skeletonAttack:
+      'Der Boden reißt auf — DREI SKELETTE klettern heraus, Knochen klappernd, und scheuchen dich vom Feld. (+1 Strafwurf)',
+  spiderCocoonMsg:
+      'Eine monströse Spinne lässt sich an einem Seidenfaden herab und wickelt dich von Kopf bis Fuß in Spinnweben ein. Du steckst, vorerst, gründlich fest.',
+  cocoonBreakFree:
+      'Mit einem letzten Ruck gibt die Seide nach. Freiheit — und ein paar neue Ängste fürs Leben.',
   snowmanLines: [
     'Der Schneemann hat seinen Eimer verloren. Er steht über solchen Dingen.',
     'Der Schneemann ist jetzt ein Drittel kürzer. Die Karotte bleibt optimistisch.',
@@ -693,6 +711,12 @@ const es = GameStrings(
       '¡Golpeaste el cubo de basura! Dos gatos absolutamente aterrorizados salen disparados, con el lomo arqueado, y desaparecen en direcciones opuestas.',
   bearChase:
       '¡El montón de nieve estalla! Un enorme oso pardo sale trepando y te persigue fuera del campo. (+1 tiro de penalización)',
+  skeletonAttack:
+      'El suelo se abre — ¡TRES ESQUELETOS salen trepando, con los huesos traqueteando, y te empujan fuera del campo! (+1 tiro de penalización)',
+  spiderCocoonMsg:
+      'Una araña monstruosa desciende desde arriba por un hilo de seda y te envuelve de pies a cabeza en telaraña. Por el momento, estás completamente atrapado.',
+  cocoonBreakFree:
+      'Con un último esfuerzo, la seda cede. Libertad — y varios miedos nuevos para toda la vida.',
   snowmanLines: [
     'El muñeco de nieve perdió su cubo. Está por encima de esas cosas.',
     'El muñeco de nieve es ahora un tercio más bajo. La zanahoria sigue optimista.',
@@ -867,6 +891,12 @@ const nl = GameStrings(
       'Je raakte de vuilnisbak! Twee doodsbange katten schieten eruit, rug gebold, en verdwijnen in tegengestelde richtingen.',
   bearChase:
       'De sneeuwhoop ontploft! Een enorme bruine beer klimt eruit en jaagt je van het veld. (+1 strafworp)',
+  skeletonAttack:
+      'De grond scheurt open — DRIE SKELETTEN klimmen eruit, botten ratelend, en jagen je van het veld. (+1 strafworp)',
+  spiderCocoonMsg:
+      'Een monsterlijke spin daalt af aan een zijden draad en wikkelt je van top tot teen in spinrag. Je zit, voorlopig, grondig vast.',
+  cocoonBreakFree:
+      'Met een laatste ruk geeft het spinsel mee. Vrijheid — en een paar nieuwe angsten voor het leven.',
   snowmanLines: [
     'De sneeuwpop is zijn emmer kwijt. Hij staat boven zulke dingen.',
     'De sneeuwpop is nu een derde korter. De wortel blijft optimistisch.',

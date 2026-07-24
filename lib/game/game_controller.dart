@@ -27,6 +27,8 @@ enum Phase {
   bearChase, // the snowdrift's resident has had enough (level 3)
   coconutBonk, // a coconut has fallen from the palm tree (level 5)
   dragonBreath, // the window dragon retaliates for the broken glass (level 4)
+  skeletonAttack, // three skeletons rise up and shuffle the player off (level 4)
+  spiderCocoon, // a spider descends and wraps an idle player in silk (level 4)
   cooldown, // short pause before the next throw / figure
   gameOver,
 }
@@ -217,6 +219,17 @@ class GameController extends ChangeNotifier {
   // The dragon who has been living in Baba Zina's window this whole time.
   bool dragonBreathing = false;
 
+  // The skeleton trio, who occasionally decide the yard is theirs.
+  bool skeletonsOut = false;
+  List<double> skeletonX = List<double>.from(World.skeletonRiseX);
+  List<double> skeletonRiseFrac = [0, 0, 0]; // 0 = buried, 1 = fully risen
+
+  // The spider who descends on players who take too long to throw.
+  bool spiderDescending = false;
+  bool playerCocooned = false;
+  double spiderCocoonX = 0, spiderCocoonY = 9.0;
+  double cocoonWrap = 0; // 0..1, how wrapped up the player is
+
   /// Mole animation clock for the painter (valid while [moleOut]).
   double get moleT => _eventT;
 
@@ -325,6 +338,12 @@ class GameController extends ChangeNotifier {
     _bearThreshold = 3 + _rng.nextInt(3);
     bearOut = false;
     bearFacingRight = false;
+    skeletonsOut = false;
+    skeletonX = List<double>.from(World.skeletonRiseX);
+    skeletonRiseFrac = [0, 0, 0];
+    spiderDescending = false;
+    playerCocooned = false;
+    cocoonWrap = 0;
     _setupFigure();
     _startPreview();
     _say('🏏',
@@ -559,6 +578,10 @@ class GameController extends ChangeNotifier {
         _tickCoconutBonk(dt);
       case Phase.dragonBreath:
         _tickDragonBreath(dt);
+      case Phase.skeletonAttack:
+        _tickSkeletonAttack(dt);
+      case Phase.spiderCocoon:
+        _tickSpiderCocoon(dt);
       case Phase.crowSteal:
         _tickCrowSteal(dt);
       case Phase.snowBury:
@@ -569,7 +592,15 @@ class GameController extends ChangeNotifier {
       case Phase.aiming:
         if (!aimingDrag) {
           idleT += dt;
-          if (idleT > _idleLimit) _startPigeonStrike();
+          if (idleT > _idleLimit) {
+            // The nightmare yard skips the bird entirely — idling there
+            // gets you cocooned instead.
+            if (nightmare) {
+              _startSpiderCocoon();
+            } else {
+              _startPigeonStrike();
+            }
+          }
         }
       case Phase.figurePreview:
         previewT -= dt;
@@ -1636,6 +1667,12 @@ class GameController extends ChangeNotifier {
         dragonBreathing = false;
         snowdriftHits = 0;
         bearOut = false;
+        skeletonsOut = false;
+        skeletonX = List<double>.from(World.skeletonRiseX);
+        skeletonRiseFrac = [0, 0, 0];
+        spiderDescending = false;
+        playerCocooned = false;
+        cocoonWrap = 0;
         _setupFigure();
         _sfx('fanfare');
         _say('🌕', L10n.t.level4Intro, ttl: 6);
@@ -1656,6 +1693,10 @@ class GameController extends ChangeNotifier {
         coconutFalling = false;
         coconutDazed = false;
         coconutBandaged = false;
+        skeletonsOut = false;
+        spiderDescending = false;
+        playerCocooned = false;
+        cocoonWrap = 0;
         _setupFigure();
         _sfx('fanfare');
         _say('🏖️', L10n.t.level5Intro, ttl: 6);
@@ -1718,6 +1759,12 @@ class GameController extends ChangeNotifier {
         _startCrowSteal();
         return;
       }
+    }
+    // The nightmare yard's other resident hazard: three skeletons who
+    // occasionally decide to climb out and shuffle the player off.
+    if (nightmare && !skeletonsOut && _rng.nextDouble() < 0.05) {
+      _startSkeletonAttack();
+      return;
     }
     // The beach's palm tree, being taller than it has any business being,
     // occasionally drops a coconut — but only when the player is actually
@@ -1843,6 +1890,90 @@ class GameController extends ChangeNotifier {
       playerBonked = false;
       bonkCrawling = false;
       _endThrow();
+    }
+  }
+
+  static const _skeletonRiseDelay = [0.0, 0.35, 0.7];
+  static const _skeletonRiseDuration = 0.9;
+  static const _skeletonWalkDuration = 1.6;
+
+  void _startSkeletonAttack() {
+    phase = Phase.skeletonAttack;
+    skeletonsOut = true;
+    skeletonX = List<double>.from(World.skeletonRiseX);
+    skeletonRiseFrac = [0, 0, 0];
+    _eventT = 0;
+    throwsTotal++; // penalty throw
+    bat.active = false;
+    _sfx('rumble');
+    _say('💀', L10n.t.skeletonAttack, ttl: 4.5);
+  }
+
+  void _tickSkeletonAttack(double dt) {
+    _eventT += dt;
+    var allDone = true;
+    for (int i = 0; i < 3; i++) {
+      final localT = _eventT - _skeletonRiseDelay[i];
+      skeletonRiseFrac[i] = (localT / _skeletonRiseDuration).clamp(0.0, 1.0);
+      if (localT > _skeletonRiseDuration) {
+        // Fully risen — shuffle toward the player.
+        final walkT =
+            ((localT - _skeletonRiseDuration) / _skeletonWalkDuration)
+                .clamp(0.0, 1.0);
+        final target = playerX + 0.5 + i * 0.3;
+        skeletonX[i] = World.skeletonRiseX[i] -
+            (World.skeletonRiseX[i] - target) * walkT;
+        if (walkT < 1.0) allDone = false;
+      } else {
+        allDone = false;
+      }
+    }
+    if (_eventT > _skeletonRiseDelay[0] + 0.5) {
+      playerFleeing = true;
+      playerRunOffset -= dt * 4.5;
+    }
+    if (allDone && _eventT > 3.2) {
+      skeletonsOut = false;
+      playerFleeing = false;
+      playerRunOffset = 0;
+      _endThrow();
+    }
+  }
+
+  void _startSpiderCocoon() {
+    phase = Phase.spiderCocoon;
+    _eventT = 0;
+    spiderDescending = true;
+    playerCocooned = false;
+    cocoonWrap = 0;
+    spiderCocoonX = playerX + 0.1;
+    spiderCocoonY = 8.5;
+    bat.active = false;
+    _sfx('boing');
+    _say('🕷️', L10n.t.spiderCocoonMsg, ttl: 4.5);
+  }
+
+  void _tickSpiderCocoon(double dt) {
+    _eventT += dt;
+    if (spiderDescending) {
+      spiderCocoonY -= 3.4 * dt;
+      if (spiderCocoonY <= 2.3) {
+        spiderDescending = false;
+        playerCocooned = true;
+        _eventT = 0;
+        _sfx('boing');
+      }
+    } else if (playerCocooned) {
+      cocoonWrap = math.min(1.0, cocoonWrap + dt * 1.6);
+      if (_eventT > 4.2) {
+        // Struggles free at last.
+        playerCocooned = false;
+        cocoonWrap = 0;
+        idleT = 0;
+        _idleLimit = 15 + _rng.nextDouble() * 10;
+        phase = Phase.aiming;
+        _say('🕸️', L10n.t.cocoonBreakFree, ttl: 3);
+      }
     }
   }
 
